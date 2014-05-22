@@ -9,11 +9,19 @@ package com.ctxt;
  */
 public class ServiceCommunicator extends Service
 {
+  /**
+   *  Member Variables.
+   *  thisSMSreceiver SMSreceiver registered for onReceive().
+   *  SMSintentFilter intentFilter to filter to handle received SMS.
+   */
   private SMSreceiver thisSMSreceiver;
   private intentFilter SMSintentFilter;
 
   /**
-   *  onCreate() registers an SMSreceiver.
+   *  onCreate() registers a BroadcastReceiver for receiving SMS.
+   *
+   *  Specifically, onCreate() registers a new instance of the nested
+   *  SMSreceiver class filtered to handle SMS_RECEIVED intents.
    */
   @Override
   public void onCreate()
@@ -26,7 +34,12 @@ public class ServiceCommunicator extends Service
   }
 
   /**
-   *  SMSreceiver subclass of BroadcastReceiver for receiving encrypted SMS.
+   *  SMSreceiver subclass of BroadcastReceiver for receiving SMS.
+   *
+   *  Do special handling for receiving SMS ciphertext and push it to the SMS
+   *  folder as plaintext. Access the private key for decryption.
+   *
+   *  If a plaintext SMS is received: What do?
    */
   private class SMSreceiver extends BroadcastReceiver
   {
