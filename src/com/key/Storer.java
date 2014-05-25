@@ -26,10 +26,16 @@ public class Storer
    *
    *  KEYBITS constant int representing the size of keys to use.
    *  CIPHER constant string representing which public key algorithm to use.
+   *  KEYSTORENAME constant string representing the file name used for storing
+   *    the private key on disk.
+   *  PRIVKEYALIAS constant string representing the alias used for the private
+   *    key in the keystore. A constant is used because only one private key
+   *    needs to be stored.
    */
   public static final int KEYBITS = 1024;
   public static final String CIPHER = "RSA";
   private static final String KEYSTORENAME = ".privKeystore";
+  private static final String PRIVKEYALIAS = "self";
 
   /**
    *  Member Variables.
@@ -67,9 +73,9 @@ public class Storer
       KeyPair keyPair = kpg.generateKeyPair();
 
       //store private key into keystore
-      ks.setKeyEntry(USERNUMBER, keyPair.getPrivate(), null, null);
-      //TODO:Go store KeyPair.public for my own number with fetcher
-        //what is my own number?
+      ks.setKeyEntry(Storer.PRIVKEYALIAS, keyPair.getPrivate(), null, null);
+      //store public key using Fetcher
+      (new Fetcher()).storeSelfKey(keyPair.getPublic());
 
       //write keystore to disk
       FileOutputStream f = openFileOutput(Storer.KEYSTORENAME,
