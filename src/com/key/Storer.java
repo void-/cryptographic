@@ -2,6 +2,7 @@ package key;
 
 import android.content.Context;
 import java.security.*;
+import javax.crypto.Cipher;
 
 /**
  *  Storer class handles storage and access of a single private key.
@@ -62,7 +63,7 @@ public class Storer
     {
       //try to load private key from disk
       FileInputStream f = openFileInput(Storer.KEYSTORENAME);
-      ks.load(f);
+      ks.load(f, null);
       f.close();
     }
     catch(FileNotFoundException e)
@@ -89,9 +90,17 @@ public class Storer
    *  decrypt() given a ciphertext will decrypt it with the private key.
    *
    *  Unfortunately RSA is vulnerable to chosen ciphertext(oops), maybe this
-   *  shouldn't be a public method but rather package protected.
+   *  shouldn't be a public method but rather package protected. However, the
+   *  callers of this method are likely not in this package.
+   *
+   *  @param cipherText byte array containing ciphertext to decrypt.
+   *  @return plaintext of given cipherText using the private key.
    */
-  public PLAINTEXT decrypt(CIPHERTEXT c)
+  public byte[] decrypt(byte[] cipherText)
   {
+    Cipher c = Cipher.getInstance(Storer.CIPHER);
+    c.init(Cipher.DECRYPT_MODE, (PrivateKey)
+      this.ks.getKey(Storer.PRIVKEYALIAS, null));
+    return c.doFinal(cipherText);
   }
 }
