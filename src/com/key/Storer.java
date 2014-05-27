@@ -1,24 +1,26 @@
 package key;
 
+import com.key.Storer;
 import android.content.Context;
 import java.security.*;
 import javax.crypto.Cipher;
 
 /**
- *  Storer class handles storage and access of a single private key.
+ *  Storer class handles storage of a single private key and decryption.
  *
- *  (prospective) General useage steps:
- *    Initialize a Storer ; it will get out the private key
- *    Ask the Storer for the private key OR ask the Storer to decrypt something
+ *  Example usage:
+ *    Storer s = new Storer();
+ *    byte[] cipherText = --some method that returns ciphertext--
+ *    byte[] plainText = s.decrypt(cipherText);
+ *    --do something with plainText--
  *
- *  Design thoughts:
- *    It is probably preferable if the private key never left the Storer:
- *    decrease the size of the TCB
- *    This implies decryption must be bundled up with the Storer-bad for
- *    abstraction/refactoring for different algorithms: but this is later
- *
- *    TODO: determine the object types to be used-replace all CAPs
- *
+ *  Design notes:
+ *    The private key managed by Storer never leaves Storer. This decreases the
+ *      size of the TCB.
+ *    A KeyStore is used for storing the private key on disk for convenient
+ *      serialization. No password or cert chain is used because both of these
+ *      seem irrelevant. Android OS file permission security is relied upon to
+ *      avoid other applications exfiltrating the private key.
  */
 public class Storer
 {
@@ -54,7 +56,6 @@ public class Storer
    *
    *  Use null for password.
    *  Use null for cert chain:certs aren't relevant
-   *
    */
   Storer()
   {
@@ -99,8 +100,8 @@ public class Storer
   public byte[] decrypt(byte[] cipherText)
   {
     Cipher c = Cipher.getInstance(Storer.CIPHER);
-    c.init(Cipher.DECRYPT_MODE, (PrivateKey)
-      this.ks.getKey(Storer.PRIVKEYALIAS, null));
+    c.init(Cipher.DECRYPT_MODE, (PrivateKey) ks.getKey(Storer.PRIVKEYALIAS,
+      null));
     return c.doFinal(cipherText);
   }
 }

@@ -6,6 +6,12 @@ import java.security.*;
 /**
  *  Fetcher class given someone's contact number, will return their public key.
  *
+ *  Example usage:
+ *    Fetcher f = new Fetcher();
+ *    f.storeSelfKey(new PublicKey());
+ *    Storer.NumberKeyPair myKey = f.shareKey();
+ *    Storer.NumberKeyPair nkp = f.fetchKey("+1 555 555 5555");
+ *
  *  (prospective) General useage steps:
  *    Initialize a Fetcher; it will open up the database or whatever it needs
  *    Ask the Fetcher to enumerate all contacts (people who's pub keys it has)
@@ -182,7 +188,7 @@ public class Fetcher
    *
    *  NumberKeyPair objects are immutable once instantiated.
    */
-  public class NumberKeyPair
+  public class NumberKeyPair implements serializable
   {
     /**
      *  Member Variables.
@@ -224,6 +230,33 @@ public class Fetcher
     final PublicKey getKey()
     {
       return this.number;
+    }
+
+    /**
+     *  writeObject() serializes this NumberKeyPair.
+     *
+     *  @param out ObjectOutputStream to write to.
+     */
+    @Override
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException
+    {
+      //This is cheating
+      out.writeObject(this);
+    }
+
+    /**
+     *  readObject() deserializes this NumberKeyPair.
+     *
+     *  @param in ObjectInputStream to read from.
+     */
+    @Override
+    private void readObject(java.io.ObjectInputStream in) throws IOException,
+        ClassNotFoundException
+    {
+      //still cheating
+      NumberKeyPair pair = (NumberKeyPair) in.readObject();
+      this.number = pair.number;
+      this.key = pair.key;
     }
   }
 
