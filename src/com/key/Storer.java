@@ -1,9 +1,14 @@
-package key;
+package src.com.key;
 
-import com.key.Storer;
+import src.com.key.Fetcher;
+import android.app.Activity;
 import android.content.Context;
 import java.security.*;
 import javax.crypto.Cipher;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 
 /**
  *  Storer class handles storage of a single private key and decryption.
@@ -22,7 +27,7 @@ import javax.crypto.Cipher;
  *      seem irrelevant. Android OS file permission security is relied upon to
  *      avoid other applications exfiltrating the private key.
  */
-public class Storer
+public class Storer extends Activity
 {
   /**
    *  Class Variables.
@@ -59,7 +64,11 @@ public class Storer
    */
   Storer()
   {
-    this.ks = KeyStore.getInstance(KeyStore.getDefaultType());
+    try
+    {
+      this.ks = KeyStore.getInstance(KeyStore.getDefaultType());
+    }
+    catch(KeyStoreException e) { }
     try
     {
       //try to load private key from disk
@@ -70,21 +79,45 @@ public class Storer
     catch(FileNotFoundException e)
     {
       //generate a new keypair for the user
-      KeyPairGenerator kgen = new KeyPairGenerator.getInstance(Storer.CIPHER);
+      KeyPairGenerator kgen = null;
+      try
+      {
+        kgen = KeyPairGenerator.getInstance(Storer.CIPHER);
+      }
+      catch(NoSuchAlgorithmException e1) { }
       kgen.initialize(Storer.KEYBITS);
-      KeyPair keyPair = kpg.generateKeyPair();
+      KeyPair keyPair = kgen.generateKeyPair();
 
       //store private key into keystore
-      ks.setKeyEntry(Storer.PRIVKEYALIAS, keyPair.getPrivate(), null, null);
+      try
+      {
+        ks.setKeyEntry(Storer.PRIVKEYALIAS, keyPair.getPrivate(), null, null);
+      }
+      catch(KeyStoreException e1) { }
       //store public key using Fetcher
-      (new Fetcher()).storeSelfKey(keyPair.getPublic());
+      try
+      {
+        (new Fetcher()).storeSelfKey(keyPair.getPublic());
+      }
+      catch(Fetcher.KeyAlreadyExistsException e1) { }
 
       //write keystore to disk
-      FileOutputStream f = openFileOutput(Storer.KEYSTORENAME,
-        Context.MODE_PRIVATE);
-      ks.store(f, null);
-      f.close();
+      try
+      {
+        FileOutputStream f = openFileOutput(Storer.KEYSTORENAME,
+          Context.MODE_PRIVATE);
+        ks.store(f, null);
+        f.close();
+      }
+      catch(FileNotFoundException e1) { }
+      catch(KeyStoreException e1) { }
+      catch(IOException e1) { }
+      catch(NoSuchAlgorithmException e1) { }
+      catch(java.security.cert.CertificateException e1) { }
     }
+    catch(IOException e) { }
+    catch(NoSuchAlgorithmException e) { }
+    catch(java.security.cert.CertificateException e) { }
   }
 
   /**
@@ -99,9 +132,21 @@ public class Storer
    */
   public byte[] decrypt(byte[] cipherText)
   {
-    Cipher c = Cipher.getInstance(Storer.CIPHER);
-    c.init(Cipher.DECRYPT_MODE, (PrivateKey) ks.getKey(Storer.PRIVKEYALIAS,
-      null));
-    return c.doFinal(cipherText);
+    Cipher c = null;
+    try
+    {
+      c = Cipher.getInstance(Storer.CIPHER);
+      c.init(Cipher.DECRYPT_MODE, (PrivateKey) ks.getKey(Storer.PRIVKEYALIAS,
+        null));
+      return c.doFinal(cipherText);
+    }
+    catch(NoSuchAlgorithmException e) { }
+    catch(javax.crypto.NoSuchPaddingException e) { }
+    catch(KeyStoreException e) { }
+    catch(UnrecoverableKeyException e) { }
+    catch(InvalidKeyException e) { }
+    catch(javax.crypto.IllegalBlockSizeException e) { }
+    catch(javax.crypto.BadPaddingException e) { }
+    return null;
   }
 }

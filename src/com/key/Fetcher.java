@@ -1,7 +1,16 @@
-package key;
+package src.com.key;
 import android.telephony.TelephonyManager; //For storing self public key
+import android.app.Activity;
 import android.content.Context;
 import java.security.*;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.util.Enumeration;
 
 /**
  *  Fetcher class given someone's contact number, will return their public key.
@@ -28,7 +37,7 @@ import java.security.*;
  *    Use null for cert chain:certs aren't relevant.
  *
  */
-public class Fetcher
+public class Fetcher extends Activity //just to get file access
 {
   /**
    *  Class Variables.
@@ -36,7 +45,7 @@ public class Fetcher
    *  KEYSTORENAME constant string representing the file name used for storing
    *    the public keys on disk.
    */
-  private static final String KEYSTORENAME = ".pubKeyStore"
+  private static final String KEYSTORENAME = ".pubKeyStore";
 
   /**
    *  Member Variables.
@@ -56,23 +65,38 @@ public class Fetcher
   public Fetcher()
   {
     //setup connection to database/ unpickle things or whatever
-    this.ks = KeyStore.getInstance(KeyStore.getDefaultType());
+    try
+    {
+      this.ks = KeyStore.getInstance(KeyStore.getDefaultType());
+    }
+    catch(KeyStoreException e) {}
 
     //invalidate cache for enumerateKeys()
     this.savedPairs = null;
     try
     {
       //load all public keys from disk
-      FileInputStream f = openFileInput(Fetcher.KEYSTORENAME);
-      ks.load(f);
-      f.close();
+      FileInputStream fi = openFileInput(Fetcher.KEYSTORENAME);
+      try
+      {
+        ks.load(fi, null);
+        fi.close();
+      }
+      catch(IOException e) { }
+      catch(NoSuchAlgorithmException e) { }
+      catch(java.security.cert.CertificateException e) { }
     }
     catch(FileNotFoundException e)
     {
       //touch key store
-      FileOutputStream f = openFileOutput(Fetcher.KEYSTORENAME,
-        Context.MODE_PRIVATE);
-      f.close();
+      try
+      {
+        FileOutputStream fo = openFileOutput(Fetcher.KEYSTORENAME,
+          Context.MODE_PRIVATE);
+        fo.close();
+      }
+      catch(FileNotFoundException e1) { }
+      catch(IOException e1) { }
     }
   }
 
@@ -85,22 +109,34 @@ public class Fetcher
    *  be null.
    *
    *  Caching is done on the output by private member variable 'savedPairs'.
+   *  The savedPairs cache is invalidated by setting it to null.
    *
    *  @return array of NumberKeyPair objects representing (number : key) pairs.
    */
   public NumberKeyPair[] enumerateKeys()
   {
+    //savedPairs cache still valid
     if(savedPairs != null)
     {
       return savedPairs;
     }
-    NumberKeyPair[] pairs = new NumberKeyPair[ks.size()]();
-    int i = 0;
-    for(String number : ks.aliases())
+    NumberKeyPair[] pairs = null;
+    try
     {
-      pairs[i++] = fetchKey(number);
+      pairs = new NumberKeyPair[ks.size()];
     }
-    savedPairs = pairs;
+    catch(KeyStoreException e) { }
+    //Iterate through the keystore aliases, lookup its key, add to output array
+    int i = 0;
+    try
+    {
+      for(Enumeration<String> number = ks.aliases(); number.hasMoreElements();)
+      {
+        pairs[i++] = fetchKey(number.nextElement());
+      }
+    }
+    catch(KeyStoreException e) { }
+    this.savedPairs = pairs;
     return pairs;
   }
 
@@ -116,7 +152,14 @@ public class Fetcher
    */
   public NumberKeyPair fetchKey(String number)
   {
-    PublicKey p = (PublicKey) ks.getKey(number, null);
+    PublicKey p = null;
+    try
+    {
+      p = (PublicKey) ks.getKey(number, null);
+    }
+    catch(KeyStoreException e) { }
+    catch(NoSuchAlgorithmException e) { }
+    catch(UnrecoverableKeyException e) { }
     if(p == null)
     {
       return null;
@@ -131,7 +174,8 @@ public class Fetcher
    */
   public NumberKeyPair shareKey()
   {
-    return fetchKey((new TelephonyManager()).getLine1Number());
+    return fetchKey(((TelephonyManager)getSystemService(
+      Context.TELEPHONY_SERVICE)).getLine1Number());
   }
 
   /**
@@ -157,13 +201,25 @@ public class Fetcher
       throw new KeyAlreadyExistsException();
     }
     //insert the new public key
-    ks.setKeyEntry(number, key, null, null);
+    try
+    {
+      ks.setKeyEntry(number, key, null, null);
+    }
+    catch(KeyStoreException e) { }
 
     //rewrite the ENTIRE file: this is not preferable
-    FileOutputStream f = openFileOutput(Storer.KEYSTORENAME,
-      Context.MODE_PRIVATE);
-    ks.store(f, null);
-    f.close();
+    try
+    {
+      FileOutputStream f = openFileOutput(Fetcher.KEYSTORENAME,
+        Context.MODE_PRIVATE);
+      ks.store(f, null);
+      f.close();
+    }
+    catch(FileNotFoundException e) { }
+    catch(KeyStoreException e) { }
+    catch(NoSuchAlgorithmException e) { }
+    catch(java.security.cert.CertificateException e) { }
+    catch(IOException e) { }
     //invalidate cache for enumerateKeys()
     this.savedPairs = null;
   }
@@ -179,7 +235,8 @@ public class Fetcher
    */
   void storeSelfKey(PublicKey key) throws KeyAlreadyExistsException
   {
-    this.newKey(((new TelephonyManager()).getLine1Number()), key);
+    this.newKey(((TelephonyManager)getSystemService(
+      Context.TELEPHONY_SERVICE)).getLine1Number(), key);
   }
 
   /**
@@ -188,7 +245,7 @@ public class Fetcher
    *
    *  NumberKeyPair objects are immutable once instantiated.
    */
-  public class NumberKeyPair implements serializable
+  public class NumberKeyPair implements Serializable
   {
     /**
      *  Member Variables.
@@ -217,7 +274,7 @@ public class Fetcher
      *
      *  @return number.
      */
-    final String getNumber()
+    public final String getNumber()
     {
       return this.number;
     }
@@ -227,37 +284,37 @@ public class Fetcher
      *
      *  @return key.
      */
-    final PublicKey getKey()
+    public final PublicKey getKey()
     {
-      return this.number;
+      return this.key;
     }
 
-    /**
-     *  writeObject() serializes this NumberKeyPair.
-     *
-     *  @param out ObjectOutputStream to write to.
-     */
-    @Override
-    private void writeObject(java.io.ObjectOutputStream out) throws IOException
-    {
-      //This is cheating
-      out.writeObject(this);
-    }
+  //  /**
+  //   *  writeObject() serializes this NumberKeyPair.
+  //   *
+  //   *  @param out ObjectOutputStream to write to.
+  //   */
+  //  @Override
+  //  private void writeObject(ObjectOutputStream out) throws IOException
+  //  {
+  //    //This is cheating
+  //    out.writeObject(this);
+  //  }
 
-    /**
-     *  readObject() deserializes this NumberKeyPair.
-     *
-     *  @param in ObjectInputStream to read from.
-     */
-    @Override
-    private void readObject(java.io.ObjectInputStream in) throws IOException,
-        ClassNotFoundException
-    {
-      //still cheating
-      NumberKeyPair pair = (NumberKeyPair) in.readObject();
-      this.number = pair.number;
-      this.key = pair.key;
-    }
+  //  /**
+  //   *  readObject() deserializes this NumberKeyPair.
+  //   *
+  //   *  @param in ObjectInputStream to read from.
+  //   */
+  //  @Override
+  //  private void readObject(java.io.ObjectInputStream in) throws IOException,
+  //      ClassNotFoundException
+  //  {
+  //    //still cheating
+  //    NumberKeyPair pair = (NumberKeyPair) in.readObject();
+  //    this.number = pair.number;
+  //    this.key = pair.key;
+  //  }
   }
 
   /**
