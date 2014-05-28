@@ -1,4 +1,5 @@
 package src.com.key;
+import android.util.Log;
 import android.telephony.TelephonyManager; //For storing self public key
 import android.app.Activity;
 import android.content.Context;
@@ -46,6 +47,7 @@ public class Fetcher extends Activity //just to get file access
    *    the public keys on disk.
    */
   private static final String KEYSTORENAME = ".pubKeyStore";
+  private static final String TAG = "FETCHER";
 
   /**
    *  Member Variables.
@@ -82,9 +84,10 @@ public class Fetcher extends Activity //just to get file access
         ks.load(fi, null);
         fi.close();
       }
-      catch(IOException e) { }
-      catch(NoSuchAlgorithmException e) { }
-      catch(java.security.cert.CertificateException e) { }
+      catch(IOException e) { Log.e(Fetcher.TAG, "exception", e); }
+      catch(NoSuchAlgorithmException e) { Log.e(Fetcher.TAG, "exception", e); }
+      catch(java.security.cert.CertificateException e)
+      { Log.e(Fetcher.TAG, "exception", e); }
     }
     catch(FileNotFoundException e)
     {
@@ -95,8 +98,8 @@ public class Fetcher extends Activity //just to get file access
           Context.MODE_PRIVATE);
         fo.close();
       }
-      catch(FileNotFoundException e1) { }
-      catch(IOException e1) { }
+      catch(FileNotFoundException e1) { Log.e(Fetcher.TAG, "exception", e1); }
+      catch(IOException e1) { Log.e(Fetcher.TAG, "exception", e1); }
     }
   }
 
@@ -125,7 +128,7 @@ public class Fetcher extends Activity //just to get file access
     {
       pairs = new NumberKeyPair[ks.size()];
     }
-    catch(KeyStoreException e) { }
+    catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
     //Iterate through the keystore aliases, lookup its key, add to output array
     int i = 0;
     try
@@ -135,7 +138,7 @@ public class Fetcher extends Activity //just to get file access
         pairs[i++] = fetchKey(number.nextElement());
       }
     }
-    catch(KeyStoreException e) { }
+    catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
     this.savedPairs = pairs;
     return pairs;
   }
@@ -157,9 +160,9 @@ public class Fetcher extends Activity //just to get file access
     {
       p = (PublicKey) ks.getKey(number, null);
     }
-    catch(KeyStoreException e) { }
-    catch(NoSuchAlgorithmException e) { }
-    catch(UnrecoverableKeyException e) { }
+    catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
+    catch(NoSuchAlgorithmException e) { Log.e(Fetcher.TAG, "exception", e); }
+    catch(UnrecoverableKeyException e) { Log.e(Fetcher.TAG, "exception", e); }
     if(p == null)
     {
       return null;
@@ -205,7 +208,7 @@ public class Fetcher extends Activity //just to get file access
     {
       ks.setKeyEntry(number, key, null, null);
     }
-    catch(KeyStoreException e) { }
+    catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
 
     //rewrite the ENTIRE file: this is not preferable
     try
@@ -215,11 +218,12 @@ public class Fetcher extends Activity //just to get file access
       ks.store(f, null);
       f.close();
     }
-    catch(FileNotFoundException e) { }
-    catch(KeyStoreException e) { }
-    catch(NoSuchAlgorithmException e) { }
-    catch(java.security.cert.CertificateException e) { }
-    catch(IOException e) { }
+    catch(FileNotFoundException e) { Log.e(Fetcher.TAG, "exception", e); }
+    catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
+    catch(NoSuchAlgorithmException e) { Log.e(Fetcher.TAG, "exception", e); }
+    catch(java.security.cert.CertificateException e)
+    { Log.e(Fetcher.TAG, "exception", e); }
+    catch(IOException e) { Log.e(Fetcher.TAG, "exception", e); }
     //invalidate cache for enumerateKeys()
     this.savedPairs = null;
   }

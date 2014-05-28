@@ -1,6 +1,7 @@
 package src.com.key;
 
 import src.com.key.Fetcher;
+import android.util.Log;
 import android.app.Activity;
 import android.content.Context;
 import java.security.*;
@@ -44,6 +45,7 @@ public class Storer extends Activity
   public static final String CIPHER = "RSA";
   private static final String KEYSTORENAME = ".privKeystore";
   private static final String PRIVKEYALIAS = "self";
+  private static final String TAG = "STORER";
 
   /**
    *  Member Variables.
@@ -68,7 +70,7 @@ public class Storer extends Activity
     {
       this.ks = KeyStore.getInstance(KeyStore.getDefaultType());
     }
-    catch(KeyStoreException e) { }
+    catch(KeyStoreException e) {Log.e(Storer.TAG, "exception", e);}
     try
     {
       //try to load private key from disk
@@ -84,7 +86,7 @@ public class Storer extends Activity
       {
         kgen = KeyPairGenerator.getInstance(Storer.CIPHER);
       }
-      catch(NoSuchAlgorithmException e1) { }
+      catch(NoSuchAlgorithmException e1) { Log.e(Storer.TAG, "exception", e1);}
       kgen.initialize(Storer.KEYBITS);
       KeyPair keyPair = kgen.generateKeyPair();
 
@@ -93,13 +95,14 @@ public class Storer extends Activity
       {
         ks.setKeyEntry(Storer.PRIVKEYALIAS, keyPair.getPrivate(), null, null);
       }
-      catch(KeyStoreException e1) { }
+      catch(KeyStoreException e1) {Log.e(Storer.TAG, "exception", e1); }
       //store public key using Fetcher
       try
       {
         (new Fetcher()).storeSelfKey(keyPair.getPublic());
       }
-      catch(Fetcher.KeyAlreadyExistsException e1) { }
+      catch(Fetcher.KeyAlreadyExistsException e1)
+      { Log.e(Storer.TAG, "exception", e1); }
 
       //write keystore to disk
       try
@@ -109,15 +112,17 @@ public class Storer extends Activity
         ks.store(f, null);
         f.close();
       }
-      catch(FileNotFoundException e1) { }
-      catch(KeyStoreException e1) { }
-      catch(IOException e1) { }
-      catch(NoSuchAlgorithmException e1) { }
-      catch(java.security.cert.CertificateException e1) { }
+      catch(FileNotFoundException e1) {Log.e(Storer.TAG, "exception", e1); }
+      catch(KeyStoreException e1) {Log.e(Storer.TAG, "exception", e1); }
+      catch(IOException e1) {Log.e(Storer.TAG, "exception", e1); }
+      catch(NoSuchAlgorithmException e1) {Log.e(Storer.TAG, "exception", e1); }
+      catch(java.security.cert.CertificateException e1)
+      { Log.e(Storer.TAG, "exception", e1); }
     }
-    catch(IOException e) { }
-    catch(NoSuchAlgorithmException e) { }
-    catch(java.security.cert.CertificateException e) { }
+    catch(IOException e) {Log.e(Storer.TAG, "exception", e); }
+    catch(NoSuchAlgorithmException e) {Log.e(Storer.TAG, "exception", e); }
+    catch(java.security.cert.CertificateException e)
+    { Log.e(Storer.TAG, "exception", e); }
   }
 
   /**
@@ -140,13 +145,16 @@ public class Storer extends Activity
         null));
       return c.doFinal(cipherText);
     }
-    catch(NoSuchAlgorithmException e) { }
-    catch(javax.crypto.NoSuchPaddingException e) { }
-    catch(KeyStoreException e) { }
-    catch(UnrecoverableKeyException e) { }
-    catch(InvalidKeyException e) { }
-    catch(javax.crypto.IllegalBlockSizeException e) { }
-    catch(javax.crypto.BadPaddingException e) { }
+    catch(NoSuchAlgorithmException e) {Log.e(Storer.TAG, "exception", e); }
+    catch(javax.crypto.NoSuchPaddingException e)
+    {Log.e(Storer.TAG, "exception", e); }
+    catch(KeyStoreException e) {Log.e(Storer.TAG, "exception", e); }
+    catch(UnrecoverableKeyException e) {Log.e(Storer.TAG, "exception", e); }
+    catch(InvalidKeyException e) {Log.e(Storer.TAG, "exception", e); }
+    catch(javax.crypto.IllegalBlockSizeException e)
+    {Log.e(Storer.TAG, "exception", e); }
+    catch(javax.crypto.BadPaddingException e)
+    {Log.e(Storer.TAG, "exception", e); }
     return null;
   }
 }
