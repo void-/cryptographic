@@ -72,9 +72,8 @@ public class Fetcher extends Activity //extend just to get internal file access
    *  If the keystore file does not already exist, a new one will be created.
    *  Otherwise, the keystore will be loaded from disk.
    */
-  public Fetcher()
+  Fetcher()
   {
-    //setup connection to database/ unpickle things or whatever
     try
     {
       this.ks = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -99,7 +98,7 @@ public class Fetcher extends Activity //extend just to get internal file access
     }
     catch(FileNotFoundException e)
     {
-      //touch key store
+      //touch key store for the first time
       try
       {
         FileOutputStream fo = openFileOutput(Fetcher.KEYSTORENAME,
@@ -206,7 +205,7 @@ public class Fetcher extends Activity //extend just to get internal file access
   public void newKey(String number, PublicKey key) throws
       KeyAlreadyExistsException
   {
-    //if the number is not known, throw an exception
+    //if the number is known, ie it already has a key, throw an exception
     if(fetchKey(number) != null)
     {
       throw new KeyAlreadyExistsException();
