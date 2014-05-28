@@ -1,6 +1,8 @@
 package src.com.share;
 
-import src.com.key.*;
+import src.com.key.Key;
+import src.com.key.NumberKeyPair;
+import src.com.key.KeyAlreadyExistsException;
 
 import android.util.Log;
 import android.nfc.*;
@@ -37,8 +39,14 @@ public class KeyShare extends Activity implements
    *  pairToShare the user's (number:public key) to share via nfc.
    */
   NfcAdapter nfcAdapter;
-  Fetcher.NumberKeyPair pairToShare;
+  NumberKeyPair pairToShare;
 
+  /**
+   *  Class Variables.
+   *
+   *  TAG constant string representing the tag to use when logging events that
+   *    originate from calls to KeyPair methods.
+   */
   private static final String TAG = "KEYSHARE";
 
   /**
@@ -61,7 +69,7 @@ public class KeyShare extends Activity implements
     try
     {
       out = new ObjectOutputStream(bo);
-      out.writeObject((new Fetcher()).shareKey()); //FIXME: use static
+      out.writeObject((Key.getFetcher()).shareKey());
       bin = bo.toByteArray();
       out.close();
       bo.close();
@@ -123,7 +131,7 @@ public class KeyShare extends Activity implements
     ByteArrayInputStream b = new ByteArrayInputStream(
       msg.getRecords()[0].getPayload());
     ObjectInput in = null;
-    Fetcher.NumberKeyPair pair = null;
+    NumberKeyPair pair = null;
     try
     {
       in = new ObjectInputStream(b);
@@ -133,7 +141,7 @@ public class KeyShare extends Activity implements
     catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
     try
     {
-      pair = (Fetcher.NumberKeyPair) in.readObject();
+      pair = (NumberKeyPair) in.readObject();
       b.close();
       in.close();
     }
@@ -142,9 +150,9 @@ public class KeyShare extends Activity implements
     //Add the new NumberKeyPair public key to the fetcher
     try
     {
-      (new Fetcher()).newKey(pair.getNumber(), pair.getKey()); //FIXME: static
+      (Key.getFetcher()).newKey(pair.getNumber(), pair.getKey());
     }
-    catch(Fetcher.KeyAlreadyExistsException e)
+    catch(KeyAlreadyExistsException e)
     {Log.e(KeyShare.TAG, "exception", e); }
     //Write key added to text view; have user verify the phone number is right
     //DISPLAY("Key added for phone number:" + pair.getNumber());
