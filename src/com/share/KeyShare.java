@@ -1,11 +1,23 @@
-package share;
+package src.com.share;
+
+import src.com.key.*;
 
 import android.nfc.*;
+import android.app.Activity;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.content.Intent;
 import android.widget.Toast;
 
-import java.nio.chartset.Charset;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.ObjectOutput;
+import java.io.ObjectInput;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.Charset;
 
 /**
  *  KeyShare used for sharing public keys.
@@ -13,7 +25,8 @@ import java.nio.chartset.Charset;
  *  I'm not sure exactly what role this class plays in the key sharing process.
  *  I suppose have some method like: startSharingThisKey(pubkey);
  */
-public class KeyShare extends Activity implements OnNdefPushCompleteCallback
+public class KeyShare extends Activity implements
+    NfcAdapter.OnNdefPushCompleteCallback
 {
 
   /**
@@ -23,7 +36,7 @@ public class KeyShare extends Activity implements OnNdefPushCompleteCallback
    *  pairToShare the user's (number:public key) to share via nfc.
    */
   NfcAdapter nfcAdapter;
-  NumberKeyPair pairToShare;
+  Fetcher.NumberKeyPair pairToShare;
 
   /**
    *  onCreate()
@@ -40,16 +53,14 @@ public class KeyShare extends Activity implements OnNdefPushCompleteCallback
     }
     //serialize the NumberKeyPair to share
     ByteArrayOutputStream bo = new ByteArrayOutputStream();
-    OutputStream out = new OutputStream(bo);
-    out.writeObject(Fetcher.shareKey());
-    byte[] bin = out.toByteArray();
+    ObjectOutput out = null;
+    byte[] bin = null;
     try
     {
+      out = new ObjectOutputStream(bo);
+      out.writeObject((new Fetcher()).shareKey()); //FIXME: use static
+      bin = bo.toByteArray();
       out.close();
-    }
-    catch(IOException e) { }
-    try
-    {
       bo.close();
     }
     catch(IOException e) { }
@@ -57,11 +68,11 @@ public class KeyShare extends Activity implements OnNdefPushCompleteCallback
     //set the NFC message to share
     nfcAdapter.setNdefPushMessage(new NdefMessage(new NdefRecord[] {new
       NdefRecord(
-        NdefRecord.TNF_MIME_MEDIA,
-        "object/src.com.key.Fetcher.NumberKeyPair".getBytes(
-          Charset.forName("US-ASCII")),
-        null,
-        bin)});
+      NdefRecord.TNF_MIME_MEDIA,
+      "object/src.com.key.Fetcher.NumberKeyPair".getBytes(
+        Charset.forName("US-ASCII")),
+      null,
+      bin)}), this);
   }
 
   /**
@@ -70,7 +81,7 @@ public class KeyShare extends Activity implements OnNdefPushCompleteCallback
    *  Display a toast that the user's key was shared.
    */
   @Override
-  public onNdefPushComplete(NfcEvent event)
+  public void onNdefPushComplete(NfcEvent event)
   {
     (Toast.makeText(getApplicationContext(), "key shared.", Toast.LENGTH_SHORT)
       ).show();
@@ -98,7 +109,7 @@ public class KeyShare extends Activity implements OnNdefPushCompleteCallback
   {
     Parcelable[] rawMsgs =
       intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
-    if(length(rawMsgs) <= 0)
+    if(rawMsgs.length <= 0)
     {
       return;
     }
@@ -108,20 +119,29 @@ public class KeyShare extends Activity implements OnNdefPushCompleteCallback
     //Deserialize a NumberKeyPair from the NdefRecord payload
     ByteArrayInputStream b = new ByteArrayInputStream(
       msg.getRecords()[0].getPayload());
-    ObjectInput in = new ObjectInputStream(b);
-    NumberKeyPair pair = (NumberKeyPair) in.readObject();
+    ObjectInput in = null;
+    Fetcher.NumberKeyPair pair = null;
     try
     {
-      b.close();
+      in = new ObjectInputStream(b);
     }
+    catch(java.io.StreamCorruptedException e) { }
     catch(IOException e) { }
     try
     {
+      pair = (Fetcher.NumberKeyPair) in.readObject();
+      b.close();
       in.close();
     }
+    catch(ClassNotFoundException e) { }
     catch(IOException e) { }
     //Add the new NumberKeyPair public key to the fetcher
-    Fetcher.newKey(pair.getKey());
-    DISPLAY("Key added for phone number:" + pair.getNumber());
+    try
+    {
+      (new Fetcher()).newKey(pair.getNumber(), pair.getKey()); //FIXME: static
+    }
+    catch(Fetcher.KeyAlreadyExistsException e) { }
+    //Write key added to text view; have user verify the phone number is right
+    //DISPLAY("Key added for phone number:" + pair.getNumber());
   }
 }
