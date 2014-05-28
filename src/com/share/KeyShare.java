@@ -2,6 +2,7 @@ package src.com.share;
 
 import src.com.key.*;
 
+import android.util.Log;
 import android.nfc.*;
 import android.app.Activity;
 import android.os.Bundle;
@@ -38,6 +39,8 @@ public class KeyShare extends Activity implements
   NfcAdapter nfcAdapter;
   Fetcher.NumberKeyPair pairToShare;
 
+  private static final String TAG = "KEYSHARE";
+
   /**
    *  onCreate()
    *  Register callbacks and related; set public key to share.
@@ -63,7 +66,7 @@ public class KeyShare extends Activity implements
       out.close();
       bo.close();
     }
-    catch(IOException e) { }
+    catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
 
     //set the NFC message to share
     nfcAdapter.setNdefPushMessage(new NdefMessage(new NdefRecord[] {new
@@ -125,22 +128,24 @@ public class KeyShare extends Activity implements
     {
       in = new ObjectInputStream(b);
     }
-    catch(java.io.StreamCorruptedException e) { }
-    catch(IOException e) { }
+    catch(java.io.StreamCorruptedException e)
+    {Log.e(KeyShare.TAG, "exception", e); }
+    catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
     try
     {
       pair = (Fetcher.NumberKeyPair) in.readObject();
       b.close();
       in.close();
     }
-    catch(ClassNotFoundException e) { }
-    catch(IOException e) { }
+    catch(ClassNotFoundException e) {Log.e(KeyShare.TAG, "exception", e); }
+    catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
     //Add the new NumberKeyPair public key to the fetcher
     try
     {
       (new Fetcher()).newKey(pair.getNumber(), pair.getKey()); //FIXME: static
     }
-    catch(Fetcher.KeyAlreadyExistsException e) { }
+    catch(Fetcher.KeyAlreadyExistsException e)
+    {Log.e(KeyShare.TAG, "exception", e); }
     //Write key added to text view; have user verify the phone number is right
     //DISPLAY("Key added for phone number:" + pair.getNumber());
   }
