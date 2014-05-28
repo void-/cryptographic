@@ -1,6 +1,7 @@
 package src.com.key;
 
-import src.com.key.Fetcher;
+import src.com.key.Key;
+import src.com.key.KeyAlreadyExistsException;
 import android.util.Log;
 import android.app.Activity;
 import android.content.Context;
@@ -20,15 +21,19 @@ import java.io.FileOutputStream;
  *    byte[] plainText = s.decrypt(cipherText);
  *    --do something with plainText--
  *
+ *  This entails general method usage, but excludes Storer's use in the Key
+ *  singleton.
+ *
  *  Design notes:
  *    The private key managed by Storer never leaves Storer. This decreases the
  *      size of the TCB.
  *    A KeyStore is used for storing the private key on disk for convenient
  *      serialization. No password or cert chain is used because both of these
  *      seem irrelevant. Android OS file permission security is relied upon to
- *      avoid other applications exfiltrating the private key.
+ *      avoid other applications exfiltrating the private key. It is assumed
+ *      that upon device compromise, all security is lost.
  */
-public class Storer extends Activity
+public class Storer extends Activity //extend just to get internal file access
 {
   /**
    *  Class Variables.
@@ -40,6 +45,8 @@ public class Storer extends Activity
    *  PRIVKEYALIAS constant string representing the alias used for the private
    *    key in the keystore. A constant is used because only one private key
    *    needs to be stored.
+   *  TAG constant string representing the tag to use when logging events that
+   *    originate from calls to Storer methods.
    */
   public static final int KEYBITS = 1024;
   public static final String CIPHER = "RSA";
@@ -99,9 +106,9 @@ public class Storer extends Activity
       //store public key using Fetcher
       try
       {
-        (new Fetcher()).storeSelfKey(keyPair.getPublic());
+        (Key.getFetcher()).storeSelfKey(keyPair.getPublic());
       }
-      catch(Fetcher.KeyAlreadyExistsException e1)
+      catch(KeyAlreadyExistsException e1)
       { Log.e(Storer.TAG, "exception", e1); }
 
       //write keystore to disk
