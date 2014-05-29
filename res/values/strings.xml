@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MainActivity</string>
+    <string name="share_name">KeyShare</string>
+    <string name="KeyShare_display_text">Sharing your public key. Ensure NFC is
+      enabled.</string>
 </resources>
