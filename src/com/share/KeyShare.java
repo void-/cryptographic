@@ -1,5 +1,7 @@
 package src.com.share;
 
+import com.ctxt.R;
+
 import src.com.key.Key;
 import src.com.key.NumberKeyPair;
 import src.com.key.KeyAlreadyExistsException;
@@ -65,7 +67,7 @@ public class KeyShare extends Activity implements
   public void onCreate(Bundle savedInstance)
   {
     super.onCreate(savedInstance);
-    setContentView(R.layout.KeyShare);
+    setContentView(R.layout.keyshare);
 
     textLog = (TextView) findViewById(R.id.textView);
 
@@ -100,7 +102,7 @@ public class KeyShare extends Activity implements
       bin)}), this);
 
     //register callback for successful message transmission
-    nfcAdapter.setOnNdefPushCompletetCallback(this, this);
+    nfcAdapter.setOnNdefPushCompleteCallback(this, this);
   }
 
   /**
@@ -189,6 +191,6 @@ public class KeyShare extends Activity implements
     catch(KeyAlreadyExistsException e)
     {Log.e(KeyShare.TAG, "exception", e); }
     //Write key added to text view; have user verify the phone number is right
-    textLog.appendText("Received key for number:" + pair.getNumber());
+    textLog.append("Received key for number:" + pair.getNumber());
   }
 }
