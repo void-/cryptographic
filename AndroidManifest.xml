@@ -6,6 +6,7 @@
     <uses-sdk android:minSdkVersion="14" />
     <!--<uses-feature android:name="android.hardware.telephony" /> -->
     <uses-feature android:name="android.hardware.nfc" />
+    <uses-permission android:name="android.permission.NFC"/>
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
 
     <uses-permission android:name="android.permission.WRITE_SMS"/>
@@ -27,6 +28,15 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name="com.share.share.KeyShare"
+                  android:label="@string/share_name">
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="object/com.key.NumberKeyPair" />
             </intent-filter>
         </activity>
     </application>
