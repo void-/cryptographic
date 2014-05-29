@@ -1,7 +1,7 @@
-package src.com.key;
+package com.key;
 
-import src.com.key.Key;
-import src.com.key.KeyAlreadyExistsException;
+import com.key.Key;
+import com.key.KeyAlreadyExistsException;
 import android.util.Log;
 import android.app.Activity;
 import android.content.Context;

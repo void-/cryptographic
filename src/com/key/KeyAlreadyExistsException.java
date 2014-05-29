@@ -1,4 +1,4 @@
-package src.com.key;
+package com.key;
 
 /**
  *  KeyAlreadyExistsException represents the exception when a public key for

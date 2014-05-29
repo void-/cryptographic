@@ -1,7 +1,7 @@
-package src.com.key;
+package com.key;
 
-import src.com.key.NumberKeyPair;
-import src.com.key.KeyAlreadyExistsException;
+import com.key.NumberKeyPair;
+import com.key.KeyAlreadyExistsException;
 
 import android.util.Log;
 import android.telephony.TelephonyManager; //For storing self public key

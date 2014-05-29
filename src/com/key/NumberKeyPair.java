@@ -1,4 +1,4 @@
-package src.com.key;
+package com.key;
 
 import java.security.PublicKey;
 import java.io.Serializable;

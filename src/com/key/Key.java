@@ -1,7 +1,7 @@
-package src.com.key;
+package com.key;
 
-import src.com.key.Storer;
-import src.com.key.Fetcher;
+import com.key.Storer;
+import com.key.Fetcher;
 
 /**
  *  Key class for keeping static instances of Storer and Fetcher; a singleton.
