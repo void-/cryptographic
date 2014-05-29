@@ -4,6 +4,8 @@ import com.share.KeyShare;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.content.Intent;
+import android.view.View;
 
 public class MainActivity extends Activity
 {
@@ -21,6 +23,6 @@ public class MainActivity extends Activity
    */
   public void onShareKey(View view)
   {
-    startActivity(new Intent(KeyShare.class));
+    startActivity(new Intent(this, KeyShare.class));
   }
 }
