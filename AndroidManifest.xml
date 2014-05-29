@@ -38,6 +38,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="object/com.key.NumberKeyPair" />
             </intent-filter>
+            <meta-data android:name="android.support.PARENT_ACTIVITY"
+                       android:value="com.ctxt.MainActivity" />
         </activity>
     </application>
 </manifest>
