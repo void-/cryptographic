@@ -1,10 +1,10 @@
-package src.com.share;
+package com.share;
 
 import com.ctxt.R;
 
-import src.com.key.Key;
-import src.com.key.NumberKeyPair;
-import src.com.key.KeyAlreadyExistsException;
+import com.key.Key;
+import com.key.NumberKeyPair;
+import com.key.KeyAlreadyExistsException;
 
 import android.util.Log;
 import android.nfc.*;
