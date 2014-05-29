@@ -10,6 +10,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.content.Intent;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -37,9 +38,11 @@ public class KeyShare extends Activity implements
    *
    *  nfcAdapter object used for interfacing with nfc communication.
    *  pairToShare the user's (number:public key) to share via nfc.
+   *  textLog TextView for informing the user which keys have been recieved.
    */
   NfcAdapter nfcAdapter;
   NumberKeyPair pairToShare;
+  TextView textLog;
 
   /**
    *  Class Variables.
@@ -52,16 +55,27 @@ public class KeyShare extends Activity implements
   /**
    *  onCreate()
    *  Register callbacks and related; set public key to share.
+   *
+   *  On setting the Ndef push message.
+   *  The user's NumberKeyPair is serialized into a byte array.
+   *  The Ndef message is a NdefRecord for a MIME type that is simply the
+   *    serialization of the NumberKeyPair.
    */
   @Override
   public void onCreate(Bundle savedInstance)
   {
+    super.onCreate(savedInstance);
+    setContentView(R.layout.KeyShare);
+
+    textLog = (TextView) findViewById(R.id.textView);
+
     nfcAdapter = NfcAdapter.getDefaultAdapter(this);
     //NFC is unavailable
     if(nfcAdapter == null)
     {
       throw new NullPointerException();
     }
+    this.pairToShare = (Key.getFetcher()).shareKey();
     //serialize the NumberKeyPair to share
     ByteArrayOutputStream bo = new ByteArrayOutputStream();
     ObjectOutput out = null;
@@ -69,7 +83,7 @@ public class KeyShare extends Activity implements
     try
     {
       out = new ObjectOutputStream(bo);
-      out.writeObject((Key.getFetcher()).shareKey());
+      out.writeObject(pairToShare);
       bin = bo.toByteArray();
       out.close();
       bo.close();
@@ -80,30 +94,49 @@ public class KeyShare extends Activity implements
     nfcAdapter.setNdefPushMessage(new NdefMessage(new NdefRecord[] {new
       NdefRecord(
       NdefRecord.TNF_MIME_MEDIA,
-      "object/src.com.key.Fetcher.NumberKeyPair".getBytes(
+      "object/com.key.NumberKeyPair".getBytes(
         Charset.forName("US-ASCII")),
       null,
       bin)}), this);
+
+    //register callback for successful message transmission
+    nfcAdapter.setOnNdefPushCompletetCallback(this, this);
+  }
+
+  /**
+   *  onResume().
+   *
+   *  Receive a new intent, if its for nfc, call processIntent() on it.
+   */
+  @Override
+  public void onResume()
+  {
+    super.onResume();
+    if(NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction()))
+    {
+      processIntent(getIntent());
+    }
   }
 
   /**
    *  onNdefPushComplete() is called upon successfull message transmission.
    *
-   *  Display a toast that the user's key was shared.
+   *  -----currently nonfunctional because the toast will be made on the binder
+   *  thread and be invisible
+   *
+   *  Display a toast that the user's public key was shared.
    */
   @Override
   public void onNdefPushComplete(NfcEvent event)
   {
-    (Toast.makeText(getApplicationContext(), "key shared.", Toast.LENGTH_SHORT)
-      ).show();
+    //(Toast.makeText(getApplicationContext(), "key shared", Toast.LENGTH_SHORT)).show();
   }
 
   /**
-   *  NOTE: Not sure what this does
+   *  onNewIntent() is called when this activity receives a new intent: do it.
+   *  By calling setIntent(), onResume() will be called after.
    *
-   *  Check: potential security vulnerability with automatically setting the
-   *  intent regardless of what it is.
-   *
+   *  @param intent given Intent should already filtered to be NDEF_DISCOVERED.
    */
   @Override
   public void onNewIntent(Intent intent)
@@ -112,9 +145,10 @@ public class KeyShare extends Activity implements
   }
 
   /**
-   *  processIntent() given an intent will determine what to do with it. In
-   *  this case, it will always assume it is a new public key.
+   *  processIntent() given an intent will determine what to do with it.
+   *  In this case, it will always assume it is a new public key.
    *
+   *  @param Intent the intent to process: presumably contains an NdefMessage.
    */
   void processIntent(Intent intent)
   {
@@ -124,7 +158,7 @@ public class KeyShare extends Activity implements
     {
       return;
     }
-    //Extract NdefMessage
+    //Extract NdefMessage: process only 1 message
     NdefMessage msg = (NdefMessage) rawMsgs[0];
 
     //Deserialize a NumberKeyPair from the NdefRecord payload
@@ -155,6 +189,6 @@ public class KeyShare extends Activity implements
     catch(KeyAlreadyExistsException e)
     {Log.e(KeyShare.TAG, "exception", e); }
     //Write key added to text view; have user verify the phone number is right
-    //DISPLAY("Key added for phone number:" + pair.getNumber());
+    textLog.appendText("Received key for number:" + pair.getNumber());
   }
 }
