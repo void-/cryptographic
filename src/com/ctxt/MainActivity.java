@@ -1,5 +1,7 @@
 package com.ctxt;
 
+import com.share.KeyShare;
+
 import android.app.Activity;
 import android.os.Bundle;
 
@@ -11,5 +13,14 @@ public class MainActivity extends Activity
   {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
+  }
+
+  /**
+   *  onShareKey() provides a dedicated button to switch to the KeyShare
+   *  activity.
+   */
+  public void onShareKey(View view)
+  {
+    startActivity(new Intent(KeyShare.class));
   }
 }
