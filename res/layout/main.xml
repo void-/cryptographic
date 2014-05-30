@@ -16,5 +16,17 @@
     android:text="@string/button_share"
     android:onClick="onShareKey"
     />
+<Button android:id="@+id/reg_sms"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="reg"
+    android:onClick="onRegSmsTest"
+    />
+<Button android:id="@+id/bin_sms"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="BIN"
+    android:onClick="onBinSmsTest"
+    />
 </LinearLayout>
 
