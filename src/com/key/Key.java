@@ -3,6 +3,8 @@ package com.key;
 import com.key.Storer;
 import com.key.Fetcher;
 
+import android.content.Context;
+
 /**
  *  Key class for keeping static instances of Storer and Fetcher; a singleton.
  *
@@ -18,6 +20,8 @@ import com.key.Fetcher;
  *  collective size of all keys ought not to exceed a few kibi. The prospected
  *  size does not merit the use of a proper database and it seems that low
  *  latency should be desired over extra main memory useage.
+ *
+ *  TODO: redocument to indicate lazy loading.
  */
 public class Key
 {
@@ -27,8 +31,8 @@ public class Key
    *  FETCHER static reference to a Fetcher instance.
    *  STORER static reference to a Storer instance.
    */
-  static final Fetcher _FETCHER = new Fetcher();
-  static final Storer _STORER = new Storer();
+  static Fetcher _FETCHER = null;
+  static Storer _STORER = null;
 
   /**
    *  Key() private constructor does not permit any construction and also does
@@ -41,8 +45,12 @@ public class Key
    *
    *  @return static Fetcher reference.
    */
-  public static Fetcher getFetcher()
+  public static Fetcher getFetcher(Context context)
   {
+    if(_FETCHER == null)
+    {
+      _FETCHER = new Fetcher(context);
+    }
     return _FETCHER;
   }
 
@@ -51,8 +59,12 @@ public class Key
    *
    *  @return static Storer reference.
    */
-  public static Storer getStorer()
+  public static Storer getStorer(Context context)
   {
+    if(_STORER == null)
+    {
+      _STORER = new Storer(context);
+    }
     return _STORER;
   }
 }

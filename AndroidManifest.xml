@@ -19,15 +19,10 @@
             <action android:name="com.ctxt.CtxtService" />
         </service> -->
 
-        <receiver android:name="com.ctxt.SMSreceiver"
-            android:exported="true">
+        <receiver android:name="com.ctxt.SMSreceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SMS_RECEIVED"
                 />
-                <!--<data
-                  android:scheme="sms"
-                  android:host="*"
-                  android:port="16101"/> -->
             </intent-filter>
         </receiver>
 

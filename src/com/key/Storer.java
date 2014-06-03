@@ -55,7 +55,7 @@ public class Storer
    *  Member Variables.
    *
    *  PrivateKey the user's private key for decryption. The algorithm used is
-   *  represented by Storer.CIPHER.
+   *   represented by Storer.CIPHER.
    */
 
   private PrivateKey k;
@@ -76,7 +76,7 @@ public class Storer
       ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
       int nRead;
-      byte[] data = new byte[KEYBITS];
+      byte[] data = new byte[KEYBITS]; //make a guess on how big it is
 
       while((nRead = f.read(data, 0, data.length)) != -1)
       {
@@ -89,7 +89,6 @@ public class Storer
     }
     catch(FileNotFoundException e)
     {
-      //initialize the keystore for the first time
       KeyPairGenerator kgen = null;
       try
       {
@@ -135,6 +134,12 @@ public class Storer
    */
   public byte[] decrypt(byte[] cipherText)
   {
+    Log.d(TAG, ""+cipherText.length);
+    //do not decrypt if the length is incorrect
+    if(cipherText.length != (Storer.KEYBITS>>3))
+    {
+      return null;
+    }
     try
     {
       Cipher c = Cipher.getInstance(Storer.CIPHER);
@@ -149,6 +154,6 @@ public class Storer
     {Log.e(Storer.TAG, "exception", e); }
     catch(javax.crypto.BadPaddingException e)
     {Log.e(Storer.TAG, "exception", e); }
-    return null;
+    return null; //could not decrypt
   }
 }

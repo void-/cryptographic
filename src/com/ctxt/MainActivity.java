@@ -1,21 +1,30 @@
 package com.ctxt;
 
 import com.share.KeyShare;
+import com.key.Key;
+import com.key.NumberKeyPair;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.content.Intent;
+import android.content.*;
+//import android.content.Intent;
 import android.view.View;
+
+import android.widget.EditText;
 
 import android.util.Log;
 
 import android.telephony.SmsManager;
 
+import javax.crypto.Cipher;
+
 public class MainActivity extends Activity
 {
   SmsManager m;
-  private static String NUMBER = "16969696969";
+  private static String NUMBER = "5554";
   private static String TAG = "MAIN_ACTIVITY:";
+  private SMSreceiver thisSMSreceiver;
+  private IntentFilter SMSintentFilter;
 
   /** Called when the activity is first created. */
   @Override
@@ -25,6 +34,12 @@ public class MainActivity extends Activity
     setContentView(R.layout.main);
 
     m = SmsManager.getDefault();
+    //thisSMSreceiver = new SMSreceiver();
+    //SMSintentFilter = new IntentFilter();
+    //SMSintentFilter.addAction("android.provider.Telephony.SMS_RECEIVED");
+    //SMSintentFilter.addDataScheme("sms");
+    //SMSintentFilter.addDataAuthority("*","16101");
+    //registerReceiver(thisSMSreceiver, SMSintentFilter);
   }
 
   /**
@@ -39,8 +54,9 @@ public class MainActivity extends Activity
   public void onRegSmsTest(View view)
   {
     byte[] msg = "Hello, World! Automated test sms.".getBytes();
+    String no = (((EditText) findViewById(R.id.number)).getText()).toString();
     Log.d(TAG, "1! Sending a regular sms!");
-    m.sendDataMessage(NUMBER, null, (short)8901, msg, null, null);
+    m.sendDataMessage(no, null, (short)8901, msg, null, null);
   }
 
   public void onBinSmsTest(View view)
@@ -61,7 +77,30 @@ public class MainActivity extends Activity
       (byte)0xa7, (byte)0xb0, (byte)0xfd, (byte)0x76, (byte)0xed, (byte)0xe4, (byte)0x14, (byte)0xb6, (byte)0x89, (byte)0x09, (byte)0x00,
       (byte)0x8c, (byte)0x8e, (byte)0x91, (byte)0xee, (byte)0xf2, (byte)0xa3, (byte)0x56
     };
+    //Cipher c = null;
+    //try
+    //{
+    //  c = Cipher.getInstance((Key.getStorer()).CIPHER);
+    //  c.init(Cipher.ENCRYPT_MODE, (PublicKey) (Key.getFetcher().shareKey()).getKey())
+    //}
+    //catch(javax.crypto.NoSuchAlgorithmException e) {Log.e(Storer.TAG, "exception", e); }
+    //catch(javax.crypto.NoSuchPaddingException e) {Log.e(Storer.TAG, "exception", e); }
+    //catch(javax.crypto.IllegalBlockSizeException e) {Log.e(Storer.TAG, "exception", e); }
+    //catch(javax.crypto.BadPaddingException e) {Log.e(Storer.TAG, "exception", e); }
+
+    //byte[] msg = c.doFinal(new {(byte)'l', (byte)'o', (byte)'l', (byte)'.'});
+
     Log.d(TAG, "2! Sending a BINARY sms!!");
-    m.sendDataMessage(NUMBER, null, (short)8901, msg, null, null);
+    String no = (((EditText) findViewById(R.id.number)).getText()).toString();
+    m.sendDataMessage(no, null, (short)16101, msg, null, null);
+  }
+
+  public void onSend(View view)
+  {
+    //byte[] msg = {(byte)'l', (byte)'o', (byte)'l', (byte)'.'};
+    byte[] msg = "9Hello, World! Automated test sms.".getBytes();
+    String no = (((EditText) findViewById(R.id.number)).getText()).toString();
+    Log.d(TAG, "3! sms sent to given number");
+    m.sendDataMessage(no, null, (short) 16101, msg, null, null);
   }
 }

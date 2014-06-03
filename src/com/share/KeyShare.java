@@ -77,7 +77,7 @@ public class KeyShare extends Activity implements
     {
       throw new NullPointerException();
     }
-    this.pairToShare = (Key.getFetcher()).shareKey();
+    this.pairToShare = (Key.getFetcher(getApplicationContext())).shareKey();
     //serialize the NumberKeyPair to share
     ByteArrayOutputStream bo = new ByteArrayOutputStream();
     ObjectOutput out = null;
@@ -186,7 +186,8 @@ public class KeyShare extends Activity implements
     //Add the new NumberKeyPair public key to the fetcher
     try
     {
-      (Key.getFetcher()).newKey(pair.getNumber(), pair.getKey());
+      (Key.getFetcher(getApplicationContext())).newKey(pair.getNumber(),
+        pair.getKey());
     }
     catch(KeyAlreadyExistsException e)
     {Log.e(KeyShare.TAG, "exception", e); }

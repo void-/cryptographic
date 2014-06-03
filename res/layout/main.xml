@@ -28,5 +28,12 @@
     android:text="BIN"
     android:onClick="onBinSmsTest"
     />
+<EditText android:id="@+id/number"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:inputType="phone"
+    android:text="5554"
+    android:onClick="onSend"
+    />
 </LinearLayout>
 

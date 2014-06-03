@@ -5,16 +5,19 @@ import com.key.KeyAlreadyExistsException;
 
 import android.util.Log;
 import android.telephony.TelephonyManager; //For storing self public key
+import android.telephony.PhoneNumberUtils;
 import android.app.Activity;
 import android.content.Context;
 import java.security.*;
+import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.InvalidKeySpecException;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.Enumeration;
+import java.io.ByteArrayOutputStream;
 
 /**
  *  Fetcher class given someone's contact number, will return their public key.
@@ -40,8 +43,6 @@ import java.util.Enumeration;
  *    Inform the Fetcher to store a new public key(why's this a fetcher then?)
  *    Ask the Fetcher for own public key(combine with regular lookup?)
  *
- *    Use PASS for keystore password.
- *    Use null for cert chain:certs aren't relevant.
  *
  */
 public class Fetcher
@@ -49,24 +50,16 @@ public class Fetcher
   /**
    *  Class Variables.
    *
-   *  KEYSTORENAME constant string representing the file name used for storing
-   *    the public keys on disk.
    *  TAG constant string representing the tag to use when logging events that
    *    originate from calls to Fetcher methods.
    */
-  private static final String KEYSTORENAME = ".pubKeyStore";
   private static final String TAG = "FETCHER";
   private static Context context;
-  private static final char[] PASS = new char[0];
 
   /**
    *  Member Variables.
    *
-   *  ks KeyStore to hold public keys.
-   *  savedPairs NumberKeyPair array to cache the output of enumerateKeys().
    */
-  private KeyStore ks;
-  private NumberKeyPair[] savedPairs;
 
   /**
    *  Fetcher() constructs a new Fetcher instance.
@@ -77,41 +70,6 @@ public class Fetcher
   Fetcher(Context context)
   {
     this.context = context;
-    try
-    {
-      this.ks = KeyStore.getInstance(KeyStore.getDefaultType());
-    }
-    catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
-
-    //invalidate cache for enumerateKeys()
-    this.savedPairs = null;
-    try
-    {
-      //load all public keys from disk
-      FileInputStream fi = context.openFileInput(Fetcher.KEYSTORENAME);
-      try
-      {
-        ks.load(fi, PASS);
-        fi.close();
-      }
-      catch(IOException e) { Log.e(Fetcher.TAG, "exception", e); }
-      catch(NoSuchAlgorithmException e) { Log.e(Fetcher.TAG, "exception", e); }
-      catch(java.security.cert.CertificateException e)
-      { Log.e(Fetcher.TAG, "exception", e); }
-    }
-    catch(NullPointerException e) { Log.e(Fetcher.TAG, "exception", e); }
-    catch(FileNotFoundException e)
-    {
-      //touch key store for the first time
-      try
-      {
-        FileOutputStream fo = context.openFileOutput(Fetcher.KEYSTORENAME,
-          Context.MODE_PRIVATE);
-        fo.close();
-      }
-      catch(FileNotFoundException e1) { Log.e(Fetcher.TAG, "exception", e1); }
-      catch(IOException e1) { Log.e(Fetcher.TAG, "exception", e1); }
-    }
   }
 
   /**
@@ -127,31 +85,9 @@ public class Fetcher
    *
    *  @return array of NumberKeyPair objects representing (number : key) pairs.
    */
-  public NumberKeyPair[] enumerateKeys()
+  public String[] enumerateKeys()
   {
-    //savedPairs cache still valid
-    if(savedPairs != null)
-    {
-      return savedPairs;
-    }
-    NumberKeyPair[] pairs = null;
-    try
-    {
-      pairs = new NumberKeyPair[ks.size()];
-    }
-    catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
-    //Iterate through the keystore aliases, lookup its key, add to output array
-    int i = 0;
-    try
-    {
-      for(Enumeration<String> number = ks.aliases(); number.hasMoreElements();)
-      {
-        pairs[i++] = fetchKey(number.nextElement());
-      }
-    }
-    catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
-    this.savedPairs = pairs;
-    return pairs;
+    return context.fileList();
   }
 
   /**
@@ -166,19 +102,40 @@ public class Fetcher
    */
   public NumberKeyPair fetchKey(String number)
   {
-    PublicKey p = null;
+    //unify the number to a standard format
+    String numberFormatted = PhoneNumberUtils.formatNumber(number);
+    FileInputStream f = null;
     try
     {
-      p = (PublicKey) ks.getKey(number, PASS);
+      f = context.openFileInput(numberFormatted);
+      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+      int nRead;
+      byte[] data = new byte[Storer.KEYBITS];
+
+      while((nRead = f.read(data, 0, data.length)) != -1)
+      {
+        buffer.write(data, 0, nRead);
+      }
+      //decode the public key
+      PublicKey k = (KeyFactory.getInstance(Storer.CIPHER)).generatePublic(new
+        X509EncodedKeySpec((buffer.toByteArray())));
+      f.close();
+      return new NumberKeyPair(numberFormatted, k);
     }
-    catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
-    catch(NoSuchAlgorithmException e) { Log.e(Fetcher.TAG, "exception", e); }
-    catch(UnrecoverableKeyException e) { Log.e(Fetcher.TAG, "exception", e); }
-    if(p == null)
+    catch(IOException e)
     {
-      return null;
+      Log.e(TAG, "Couldn't find number", e);
     }
-    return (new NumberKeyPair(number, p));
+    catch(NoSuchAlgorithmException e)
+    {
+      Log.e(TAG, "Bad algorithm.", e);
+    }
+    catch(InvalidKeySpecException e)
+    {
+      Log.e(TAG, "Problem decoding key; might have been modified.", e);
+    }
+    return null;
   }
 
   /**
@@ -214,29 +171,19 @@ public class Fetcher
     {
       throw new KeyAlreadyExistsException();
     }
-    //insert the new public key
+    //unify the number to a standard format
+    String numberFormatted = PhoneNumberUtils.formatNumber(number);
+    FileOutputStream f = null;
     try
     {
-      ks.setKeyEntry(number, key, PASS, null);
-    }
-    catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
-
-    //rewrite the ENTIRE file: this is not preferable
-    try
-    {
-      FileOutputStream f = context.openFileOutput(Fetcher.KEYSTORENAME,
-        Context.MODE_PRIVATE);
-      ks.store(f, PASS);
+      f = context.openFileOutput(numberFormatted, Context.MODE_PRIVATE);
+      f.write(new X509EncodedKeySpec(key.getEncoded()).getEncoded());
       f.close();
     }
-    catch(FileNotFoundException e) { Log.e(Fetcher.TAG, "exception", e); }
-    catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
-    catch(NoSuchAlgorithmException e) { Log.e(Fetcher.TAG, "exception", e); }
-    catch(java.security.cert.CertificateException e)
-    { Log.e(Fetcher.TAG, "exception", e); }
-    catch(IOException e) { Log.e(Fetcher.TAG, "exception", e); }
-    //invalidate cache for enumerateKeys()
-    this.savedPairs = null;
+    catch(IOException e)
+    {
+      Log.e(TAG, "Strange io exception", e);
+    }
   }
 
   /**
