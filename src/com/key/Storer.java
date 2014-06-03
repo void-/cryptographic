@@ -53,9 +53,12 @@ public class Storer
 
   /**
    *  Member Variables.
+   *
+   *  PrivateKey the user's private key for decryption. The algorithm used is
+   *  represented by Storer.CIPHER.
    */
 
-  PrivateKey k;
+  private PrivateKey k;
 
   /**
    *  Storer() constructs a new storer instance.
@@ -87,15 +90,6 @@ public class Storer
     catch(FileNotFoundException e)
     {
       //initialize the keystore for the first time
-      try
-      {
-        ks.load(null, PASS);
-      }
-      catch(IOException e1) {Log.e(Storer.TAG, "exception", e1); }
-      catch(NoSuchAlgorithmException e1) {Log.e(Storer.TAG, "exception", e1); }
-      catch(java.security.cert.CertificateException e1)
-      { Log.e(Storer.TAG, "exception", e1); }
-      //generate a new keypair for the user
       KeyPairGenerator kgen = null;
       try
       {
@@ -141,16 +135,14 @@ public class Storer
    */
   public byte[] decrypt(byte[] cipherText)
   {
-    Cipher c = null;
     try
     {
-      c = Cipher.getInstance(Storer.CIPHER);
+      Cipher c = Cipher.getInstance(Storer.CIPHER);
       c.init(Cipher.DECRYPT_MODE, this.k);
       return c.doFinal(cipherText);
     }
     catch(NoSuchAlgorithmException e) {Log.e(Storer.TAG, "exception", e); }
-    catch(InvalidKeyException e)
-    {Log.e(Storer.TAG, "exception", e); }
+    catch(InvalidKeyException e) {Log.e(Storer.TAG, "exception", e); }
     catch(javax.crypto.NoSuchPaddingException e)
     {Log.e(Storer.TAG, "exception", e); }
     catch(javax.crypto.IllegalBlockSizeException e)
