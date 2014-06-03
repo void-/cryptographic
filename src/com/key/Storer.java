@@ -33,7 +33,7 @@ import java.io.FileOutputStream;
  *      avoid other applications exfiltrating the private key. It is assumed
  *      that upon device compromise, all security is lost.
  */
-public class Storer extends Activity //extend just to get internal file access
+public class Storer
 {
   /**
    *  Class Variables.
@@ -53,6 +53,7 @@ public class Storer extends Activity //extend just to get internal file access
   private static final String KEYSTORENAME = ".privKeystore";
   private static final String PRIVKEYALIAS = "self";
   private static final String TAG = "STORER";
+  private static final char[] PASS = new char[0];
 
   /**
    *  Member Variables.
@@ -68,25 +69,34 @@ public class Storer extends Activity //extend just to get internal file access
    *  and store it. This will only happen once. If a private key already
    *  exists, extract it from the key store.
    *
-   *  Use null for password.
+   *  Use PASS for password.
    *  Use null for cert chain:certs aren't relevant
    */
-  Storer()
+  Storer(Context context)
   {
     try
     {
       this.ks = KeyStore.getInstance(KeyStore.getDefaultType());
     }
-    catch(KeyStoreException e) {Log.e(Storer.TAG, "exception", e);}
+    catch(KeyStoreException e) {Log.e(Storer.TAG, "80:exception", e);}
     try
     {
       //try to load private key from disk
-      FileInputStream f = openFileInput(Storer.KEYSTORENAME);
-      ks.load(f, null);
+      FileInputStream f = context.openFileInput(Storer.KEYSTORENAME);
+      ks.load(f, PASS);
       f.close();
     }
     catch(FileNotFoundException e)
     {
+      //initialize the keystore for the first time
+      try
+      {
+        ks.load(null, PASS);
+      }
+      catch(IOException e1) {Log.e(Storer.TAG, "exception", e1); }
+      catch(NoSuchAlgorithmException e1) {Log.e(Storer.TAG, "exception", e1); }
+      catch(java.security.cert.CertificateException e1)
+      { Log.e(Storer.TAG, "exception", e1); }
       //generate a new keypair for the user
       KeyPairGenerator kgen = null;
       try
@@ -100,13 +110,14 @@ public class Storer extends Activity //extend just to get internal file access
       //store private key into keystore
       try
       {
-        ks.setKeyEntry(Storer.PRIVKEYALIAS, keyPair.getPrivate(), null, null);
+        ks.setKeyEntry(Storer.PRIVKEYALIAS, keyPair.getPrivate(), PASS,
+          new java.security.cert.X509Certificate[0]);
       }
-      catch(KeyStoreException e1) {Log.e(Storer.TAG, "exception", e1); }
+      catch(KeyStoreException e1) {Log.e(Storer.TAG, "105:exception", e1); }
       //store public key using Fetcher
       try
       {
-        (Key.getFetcher()).storeSelfKey(keyPair.getPublic());
+        (Key.getFetcher(context)).storeSelfKey(keyPair.getPublic());
       }
       catch(KeyAlreadyExistsException e1)
       { Log.e(Storer.TAG, "exception", e1); }
@@ -114,13 +125,13 @@ public class Storer extends Activity //extend just to get internal file access
       //write keystore to disk
       try
       {
-        FileOutputStream f = openFileOutput(Storer.KEYSTORENAME,
+        FileOutputStream f = context.openFileOutput(Storer.KEYSTORENAME,
           Context.MODE_PRIVATE);
-        ks.store(f, null);
+        ks.store(f, PASS);
         f.close();
       }
       catch(FileNotFoundException e1) {Log.e(Storer.TAG, "exception", e1); }
-      catch(KeyStoreException e1) {Log.e(Storer.TAG, "exception", e1); }
+      catch(KeyStoreException e1) {Log.e(Storer.TAG, "123:exception", e1); }
       catch(IOException e1) {Log.e(Storer.TAG, "exception", e1); }
       catch(NoSuchAlgorithmException e1) {Log.e(Storer.TAG, "exception", e1); }
       catch(java.security.cert.CertificateException e1)
@@ -149,13 +160,13 @@ public class Storer extends Activity //extend just to get internal file access
     {
       c = Cipher.getInstance(Storer.CIPHER);
       c.init(Cipher.DECRYPT_MODE, (PrivateKey) ks.getKey(Storer.PRIVKEYALIAS,
-        null));
+        PASS));
       return c.doFinal(cipherText);
     }
     catch(NoSuchAlgorithmException e) {Log.e(Storer.TAG, "exception", e); }
     catch(javax.crypto.NoSuchPaddingException e)
     {Log.e(Storer.TAG, "exception", e); }
-    catch(KeyStoreException e) {Log.e(Storer.TAG, "exception", e); }
+    catch(KeyStoreException e) {Log.e(Storer.TAG, "158:exception", e); }
     catch(UnrecoverableKeyException e) {Log.e(Storer.TAG, "exception", e); }
     catch(InvalidKeyException e) {Log.e(Storer.TAG, "exception", e); }
     catch(javax.crypto.IllegalBlockSizeException e)

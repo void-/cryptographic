@@ -40,11 +40,11 @@ import java.util.Enumeration;
  *    Inform the Fetcher to store a new public key(why's this a fetcher then?)
  *    Ask the Fetcher for own public key(combine with regular lookup?)
  *
- *    Use null for keystore password.
+ *    Use PASS for keystore password.
  *    Use null for cert chain:certs aren't relevant.
  *
  */
-public class Fetcher extends Activity //extend just to get internal file access
+public class Fetcher
 {
   /**
    *  Class Variables.
@@ -56,6 +56,8 @@ public class Fetcher extends Activity //extend just to get internal file access
    */
   private static final String KEYSTORENAME = ".pubKeyStore";
   private static final String TAG = "FETCHER";
+  private static Context context;
+  private static final char[] PASS = new char[0];
 
   /**
    *  Member Variables.
@@ -72,23 +74,24 @@ public class Fetcher extends Activity //extend just to get internal file access
    *  If the keystore file does not already exist, a new one will be created.
    *  Otherwise, the keystore will be loaded from disk.
    */
-  Fetcher()
+  Fetcher(Context context)
   {
+    this.context = context;
     try
     {
       this.ks = KeyStore.getInstance(KeyStore.getDefaultType());
     }
-    catch(KeyStoreException e) {}
+    catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
 
     //invalidate cache for enumerateKeys()
     this.savedPairs = null;
     try
     {
       //load all public keys from disk
-      FileInputStream fi = openFileInput(Fetcher.KEYSTORENAME);
+      FileInputStream fi = context.openFileInput(Fetcher.KEYSTORENAME);
       try
       {
-        ks.load(fi, null);
+        ks.load(fi, PASS);
         fi.close();
       }
       catch(IOException e) { Log.e(Fetcher.TAG, "exception", e); }
@@ -96,12 +99,13 @@ public class Fetcher extends Activity //extend just to get internal file access
       catch(java.security.cert.CertificateException e)
       { Log.e(Fetcher.TAG, "exception", e); }
     }
+    catch(NullPointerException e) { Log.e(Fetcher.TAG, "exception", e); }
     catch(FileNotFoundException e)
     {
       //touch key store for the first time
       try
       {
-        FileOutputStream fo = openFileOutput(Fetcher.KEYSTORENAME,
+        FileOutputStream fo = context.openFileOutput(Fetcher.KEYSTORENAME,
           Context.MODE_PRIVATE);
         fo.close();
       }
@@ -165,7 +169,7 @@ public class Fetcher extends Activity //extend just to get internal file access
     PublicKey p = null;
     try
     {
-      p = (PublicKey) ks.getKey(number, null);
+      p = (PublicKey) ks.getKey(number, PASS);
     }
     catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
     catch(NoSuchAlgorithmException e) { Log.e(Fetcher.TAG, "exception", e); }
@@ -184,7 +188,7 @@ public class Fetcher extends Activity //extend just to get internal file access
    */
   public NumberKeyPair shareKey()
   {
-    return fetchKey(((TelephonyManager)getSystemService(
+    return fetchKey(((TelephonyManager)context.getSystemService(
       Context.TELEPHONY_SERVICE)).getLine1Number());
   }
 
@@ -213,16 +217,16 @@ public class Fetcher extends Activity //extend just to get internal file access
     //insert the new public key
     try
     {
-      ks.setKeyEntry(number, key, null, null);
+      ks.setKeyEntry(number, key, PASS, null);
     }
     catch(KeyStoreException e) { Log.e(Fetcher.TAG, "exception", e); }
 
     //rewrite the ENTIRE file: this is not preferable
     try
     {
-      FileOutputStream f = openFileOutput(Fetcher.KEYSTORENAME,
+      FileOutputStream f = context.openFileOutput(Fetcher.KEYSTORENAME,
         Context.MODE_PRIVATE);
-      ks.store(f, null);
+      ks.store(f, PASS);
       f.close();
     }
     catch(FileNotFoundException e) { Log.e(Fetcher.TAG, "exception", e); }
@@ -246,7 +250,7 @@ public class Fetcher extends Activity //extend just to get internal file access
    */
   void storeSelfKey(PublicKey key) throws KeyAlreadyExistsException
   {
-    this.newKey(((TelephonyManager)getSystemService(
+    this.newKey(((TelephonyManager)context.getSystemService(
       Context.TELEPHONY_SERVICE)).getLine1Number(), key);
   }
 }
