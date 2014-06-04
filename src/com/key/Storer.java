@@ -136,8 +136,9 @@ public class Storer
   {
     Log.d(TAG, ""+cipherText.length);
     //do not decrypt if the length is incorrect
-    if(cipherText.length != (Storer.KEYBITS>>3))
+    if(cipherText.length > (Storer.KEYBITS>>3))
     {
+      Log.d(TAG, "Aborting decryption, too long");
       return null;
     }
     try
