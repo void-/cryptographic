@@ -10,29 +10,21 @@
     android:text="Hello World, MainActivity"
     />
 
-<Button android:id="@+id/share_button"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="@string/button_share"
-    android:onClick="onShareKey"
-    />
-<Button android:id="@+id/reg_sms"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="reg"
-    android:onClick="onRegSmsTest"
-    />
-<Button android:id="@+id/bin_sms"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="BIN"
-    android:onClick="onBinSmsTest"
-    />
 <EditText android:id="@+id/number"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:inputType="phone"
     android:text="5554"
+    />
+<EditText android:id="@+id/msg"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Hello, World! Sent to 5554."
+    />
+<Button android:id="@+id/send"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="send"
     android:onClick="onSend"
     />
 </LinearLayout>
