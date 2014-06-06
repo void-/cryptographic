@@ -64,13 +64,6 @@ public class SMSreceiver extends BroadcastReceiver
       return;
     }
 
-    Log.d(TAG, "datastring:"+intent.getDataString());
-    Log.d(TAG, "dataURI:"+intent.getData());
-    Log.d(TAG, "wholeThing:"+intent);
-    Log.d(TAG, "extras:"+extras);
-    Log.d(TAG, "bundle:"+extras.keySet());
-    Log.d(TAG, "format:"+extras.get("format"));
-
     SmsMessage m = null;
     byte[] decryptedBody = null;
     //iterate through all pdus, constructs sms, decrypt contents, push plaintxt
@@ -78,13 +71,11 @@ public class SMSreceiver extends BroadcastReceiver
     {
       m = SmsMessage.createFromPdu((byte[]) pdu);
       if(m == null) { continue; }
-      ////just log the message body for now; store it later
-      Log.d(TAG, "msg:"+m);
-      Log.d(TAG, "pdu:"+m.getPdu());
+      ////just log the sender & message body for now; store it later
       Log.d(TAG, "addr:"+m.getOriginatingAddress());
       decryptedBody = (Key.getStorer(context)).decrypt(m.getUserData());
       Log.d(TAG,("body:"+new String((byte[]) ((decryptedBody == null) ?
-        "".getBytes() : decryptedBody), Charset.forName("US-ASCII"))));
+        "".getBytes() : decryptedBody))));
     }
   }
 }
