@@ -11,6 +11,9 @@ import android.content.Context;
 import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.AlgorithmParameterSpec;
+import javax.crypto.Cipher;
+import javax.crypto.spec.OAEPParameterSpec;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
@@ -199,5 +202,38 @@ public class Fetcher
   {
     this.newKey(((TelephonyManager)context.getSystemService(
       Context.TELEPHONY_SERVICE)).getLine1Number(), key);
+  }
+
+  /**
+   *  given plaintext, produce ciphertext.
+   */
+  public static byte[] encrypt(byte[] plaintext, PublicKey k)
+  {
+    try
+    {
+      AlgorithmParameterSpec spec = OAEPParameterSpec.DEFAULT;
+      Cipher c2 = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+      //Cipher c2 = Cipher.getInstance("OAEP", "BC");
+      c2.init(Cipher.ENCRYPT_MODE, k);
+
+      Cipher c = Cipher.getInstance(Storer.CIPHER);
+      c.init(Cipher.ENCRYPT_MODE, k, (AlgorithmParameterSpec)null);
+      //c.init(Cipher.DECRYPT_MODE, k);
+      byte[] cipherText = c2.doFinal(plaintext);
+      Log.d(TAG, "len:"+cipherText.length);
+      return cipherText;
+    }
+    //catch(NoSuchProviderException e) {Log.e(Fetcher.TAG, "exception", e); }
+    catch(InvalidKeyException e) {Log.e(Fetcher.TAG, "exception", e); }
+    catch(InvalidAlgorithmParameterException e1)
+      { Log.e(Fetcher.TAG, "Bad algo param", e1);}
+    catch(NoSuchAlgorithmException e) {Log.e(Fetcher.TAG, "exception", e); }
+    catch(javax.crypto.NoSuchPaddingException e)
+    {Log.e(Fetcher.TAG, "exception", e); }
+    catch(javax.crypto.IllegalBlockSizeException e)
+    {Log.e(Fetcher.TAG, "exception", e); }
+    catch(javax.crypto.BadPaddingException e)
+    {Log.e(Fetcher.TAG, "exception", e); }
+    return null;
   }
 }

@@ -7,6 +7,8 @@ import android.app.Activity;
 import android.content.Context;
 import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAKeyGenParameterSpec;
+import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.Cipher;
 import java.io.IOException;
 import java.io.FileNotFoundException;
@@ -59,6 +61,7 @@ public class Storer
    */
 
   private PrivateKey k;
+  private Cipher c;
 
   /**
    *  Storer() constructs a new storer instance.
@@ -92,10 +95,16 @@ public class Storer
       KeyPairGenerator kgen = null;
       try
       {
+        //kgen = KeyPairGenerator.getInstance(Storer.CIPHER);
         kgen = KeyPairGenerator.getInstance(Storer.CIPHER);
+        kgen.initialize(
+          KEYBITS);
+          //new RSAKeyGenParameterSpec(Storer.KEYBITS,
+          //RSAKeyGenParameterSpec.F0));
       }
       catch(NoSuchAlgorithmException e1) { Log.e(Storer.TAG, "exception", e1);}
-      kgen.initialize(Storer.KEYBITS);
+      //catch(InvalidAlgorithmParameterException e1)
+      //  { Log.e(Storer.TAG, "Bad algo param", e1);}
       KeyPair keyPair = kgen.generateKeyPair();
       this.k = keyPair.getPrivate();
 
@@ -120,6 +129,21 @@ public class Storer
     catch(NoSuchAlgorithmException e) {Log.e(Storer.TAG, "exception", e); }
     catch(java.security.spec.InvalidKeySpecException e)
     {Log.e(Storer.TAG, "exception", e); }
+
+    try
+    {
+      //this.c = Cipher.getInstance(Storer.CIPHER);
+      //this.c.init(Cipher.DECRYPT_MODE, this.k, (AlgorithmParameterSpec)null);
+      //this.c.init(Cipher.DECRYPT_MODE, this.k);
+      this.c = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+      this.c.init(Cipher.DECRYPT_MODE, k);
+    }
+    catch(InvalidKeyException e) {Log.e(Storer.TAG, "exception", e); }
+    //catch(InvalidAlgorithmParameterException e1)
+    //  { Log.e(Storer.TAG, "Bad algo param", e1);}
+    catch(NoSuchAlgorithmException e) {Log.e(Storer.TAG, "exception", e); }
+    catch(javax.crypto.NoSuchPaddingException e)
+    {Log.e(Storer.TAG, "exception", e); }
   }
 
   /**
@@ -134,23 +158,17 @@ public class Storer
    */
   public byte[] decrypt(byte[] cipherText)
   {
-    Log.d(TAG, ""+cipherText.length);
+    Log.d(TAG, "len:"+cipherText.length);
     //do not decrypt if the length is incorrect
     if(cipherText.length > (Storer.KEYBITS>>3))
     {
       Log.d(TAG, "Aborting decryption, too long");
-      return null;
+      //return null;
     }
     try
     {
-      Cipher c = Cipher.getInstance(Storer.CIPHER);
-      c.init(Cipher.DECRYPT_MODE, this.k);
-      return c.doFinal(cipherText);
+      return this.c.doFinal(cipherText);
     }
-    catch(NoSuchAlgorithmException e) {Log.e(Storer.TAG, "exception", e); }
-    catch(InvalidKeyException e) {Log.e(Storer.TAG, "exception", e); }
-    catch(javax.crypto.NoSuchPaddingException e)
-    {Log.e(Storer.TAG, "exception", e); }
     catch(javax.crypto.IllegalBlockSizeException e)
     {Log.e(Storer.TAG, "exception", e); }
     catch(javax.crypto.BadPaddingException e)
