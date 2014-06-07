@@ -55,14 +55,11 @@ public class Fetcher
    *
    *  TAG constant string representing the tag to use when logging events that
    *    originate from calls to Fetcher methods.
+   *  context Context under which this app operates. This is used for access to
+   *    the filesystem; for key storage.
    */
   private static final String TAG = "FETCHER";
   private static Context context;
-
-  /**
-   *  Member Variables.
-   *
-   */
 
   /**
    *  Fetcher() constructs a new Fetcher instance.
@@ -121,8 +118,8 @@ public class Fetcher
         buffer.write(data, 0, nRead);
       }
       //decode the public key
-      PublicKey k = (KeyFactory.getInstance(Storer.CIPHER)).generatePublic(new
-        X509EncodedKeySpec((buffer.toByteArray())));
+      PublicKey k = (KeyFactory.getInstance(Storer.ALGORITHM)).generatePublic(
+        new X509EncodedKeySpec((buffer.toByteArray())));
       f.close();
       return new NumberKeyPair(numberFormatted, k);
     }
@@ -144,7 +141,7 @@ public class Fetcher
   /**
    *  shareKey() fetches the user's public key.
    *
-   *  @return user's public key.
+   *  @return user's public key wrapped in a NumberKeyPair.
    */
   public NumberKeyPair shareKey()
   {
@@ -169,7 +166,7 @@ public class Fetcher
   public void newKey(String number, PublicKey key) throws
       KeyAlreadyExistsException
   {
-    //if the number is known, ie it already has a key, throw an exception
+    //if the number is known, i.e. it already has a key, throw an exception
     if(fetchKey(number) != null)
     {
       throw new KeyAlreadyExistsException();
@@ -211,22 +208,14 @@ public class Fetcher
   {
     try
     {
-      AlgorithmParameterSpec spec = OAEPParameterSpec.DEFAULT;
-      Cipher c2 = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-      //Cipher c2 = Cipher.getInstance("OAEP", "BC");
-      c2.init(Cipher.ENCRYPT_MODE, k);
+      Cipher c = Cipher.getInstance(Storer.ENCRYPTION_MODE);
+      c.init(Cipher.ENCRYPT_MODE, k);
 
-      Cipher c = Cipher.getInstance(Storer.CIPHER);
-      c.init(Cipher.ENCRYPT_MODE, k, (AlgorithmParameterSpec)null);
-      //c.init(Cipher.DECRYPT_MODE, k);
-      byte[] cipherText = c2.doFinal(plaintext);
+      byte[] cipherText = c.doFinal(plaintext);
       Log.d(TAG, "len:"+cipherText.length);
       return cipherText;
     }
-    //catch(NoSuchProviderException e) {Log.e(Fetcher.TAG, "exception", e); }
     catch(InvalidKeyException e) {Log.e(Fetcher.TAG, "exception", e); }
-    catch(InvalidAlgorithmParameterException e1)
-      { Log.e(Fetcher.TAG, "Bad algo param", e1);}
     catch(NoSuchAlgorithmException e) {Log.e(Fetcher.TAG, "exception", e); }
     catch(javax.crypto.NoSuchPaddingException e)
     {Log.e(Fetcher.TAG, "exception", e); }
