@@ -42,14 +42,15 @@ public class Storer
    *  Class Variables.
    *
    *  KEYBITS constant int representing the size of keys to use.
-   *  CIPHER constant string representing which public key algorithm to use.
+   *  ALGORITHM constant string representing which public key algorithm to use.
    *  KEYSTORENAME constant string representing the file name used for storing
    *    the private key on disk.
    *  TAG constant string representing the tag to use when logging events that
    *    originate from calls to Storer methods.
    */
-  public static final int KEYBITS = 1024;
-  public static final String CIPHER = "RSA";
+  public static final int KEYBITS = 1064;
+  public static final String ALGORITHM = "RSA";
+  static final String ENCRYPTION_MODE = "RSA/ECB/PKCS1Padding";
   private static final String KEYSTORENAME = ".privKey";
   private static final String TAG = "STORER";
 
@@ -57,7 +58,7 @@ public class Storer
    *  Member Variables.
    *
    *  PrivateKey the user's private key for decryption. The algorithm used is
-   *   represented by Storer.CIPHER.
+   *   represented by Storer.ALGORITHM.
    */
 
   private PrivateKey k;
@@ -86,7 +87,7 @@ public class Storer
         buffer.write(data, 0, nRead);
       }
       //decode the private key
-      k = (KeyFactory.getInstance(Storer.CIPHER)).generatePrivate(new
+      k = (KeyFactory.getInstance(Storer.ALGORITHM)).generatePrivate(new
         PKCS8EncodedKeySpec((buffer.toByteArray())));
       f.close();
     }
@@ -95,16 +96,11 @@ public class Storer
       KeyPairGenerator kgen = null;
       try
       {
-        //kgen = KeyPairGenerator.getInstance(Storer.CIPHER);
-        kgen = KeyPairGenerator.getInstance(Storer.CIPHER);
+        kgen = KeyPairGenerator.getInstance(Storer.ALGORITHM);
         kgen.initialize(
           KEYBITS);
-          //new RSAKeyGenParameterSpec(Storer.KEYBITS,
-          //RSAKeyGenParameterSpec.F0));
       }
       catch(NoSuchAlgorithmException e1) { Log.e(Storer.TAG, "exception", e1);}
-      //catch(InvalidAlgorithmParameterException e1)
-      //  { Log.e(Storer.TAG, "Bad algo param", e1);}
       KeyPair keyPair = kgen.generateKeyPair();
       this.k = keyPair.getPrivate();
 
@@ -132,15 +128,10 @@ public class Storer
 
     try
     {
-      //this.c = Cipher.getInstance(Storer.CIPHER);
-      //this.c.init(Cipher.DECRYPT_MODE, this.k, (AlgorithmParameterSpec)null);
-      //this.c.init(Cipher.DECRYPT_MODE, this.k);
-      this.c = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+      this.c = Cipher.getInstance(Storer.ENCRYPTION_MODE);
       this.c.init(Cipher.DECRYPT_MODE, k);
     }
     catch(InvalidKeyException e) {Log.e(Storer.TAG, "exception", e); }
-    //catch(InvalidAlgorithmParameterException e1)
-    //  { Log.e(Storer.TAG, "Bad algo param", e1);}
     catch(NoSuchAlgorithmException e) {Log.e(Storer.TAG, "exception", e); }
     catch(javax.crypto.NoSuchPaddingException e)
     {Log.e(Storer.TAG, "exception", e); }
@@ -155,16 +146,11 @@ public class Storer
    *
    *  @param cipherText byte array containing ciphertext to decrypt.
    *  @return plaintext of given cipherText using the private key.
+   *  @return null if decryption is unsuccessful (e.g. bad padding).
    */
   public byte[] decrypt(byte[] cipherText)
   {
     Log.d(TAG, "len:"+cipherText.length);
-    //do not decrypt if the length is incorrect
-    if(cipherText.length > (Storer.KEYBITS>>3))
-    {
-      Log.d(TAG, "Aborting decryption, too long");
-      //return null;
-    }
     try
     {
       return this.c.doFinal(cipherText);
@@ -172,7 +158,7 @@ public class Storer
     catch(javax.crypto.IllegalBlockSizeException e)
     {Log.e(Storer.TAG, "exception", e); }
     catch(javax.crypto.BadPaddingException e)
-    {Log.e(Storer.TAG, "exception", e); }
+    {Log.e(Storer.TAG, "Bad padding: Probably a plaintext.", e); }
     return null; //could not decrypt
   }
 }
