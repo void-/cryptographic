@@ -33,6 +33,7 @@ public class Key
    */
   static Fetcher _FETCHER = null;
   static Storer _STORER = null;
+  static boolean STORER_READY = false;
 
   /**
    *  Key() private constructor does not permit any construction and also does
@@ -43,10 +44,18 @@ public class Key
   /**
    *  getFetcher() returns a static reference to a Fetcher instance.
    *
+   *  getStorer() is always called to ensure that a Storer instance is always
+   *  created before a Fetcher instance.
+   *
    *  @return static Fetcher reference.
    */
   public static Fetcher getFetcher(Context context)
   {
+    if(!STORER_READY)
+    {
+      STORER_READY = true;
+      _STORER = new Storer(context);
+    }
     if(_FETCHER == null)
     {
       _FETCHER = new Fetcher(context);
@@ -63,6 +72,7 @@ public class Key
   {
     if(_STORER == null)
     {
+      STORER_READY = true;
       _STORER = new Storer(context);
     }
     return _STORER;
