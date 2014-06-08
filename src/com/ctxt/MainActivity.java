@@ -15,9 +15,6 @@ import android.widget.EditText;
 import android.util.Log;
 import android.telephony.SmsManager;
 
-import java.security.interfaces.RSAPublicKey;
-import java.nio.charset.Charset;
-
 public class MainActivity extends Activity
 {
   SmsManager m;
@@ -36,9 +33,7 @@ public class MainActivity extends Activity
     m = SmsManager.getDefault();
 
     //test ciphers
-    //Key.getStorer(getApplicationContext());
     Key.getFetcher(getApplicationContext());
-    Log.d(TAG,"exp:"+((RSAPublicKey)((Key.getFetcher(getApplicationContext())).shareKey().getKey())).getPublicExponent());
     //test that decryption is encryption inverse
     Log.d(TAG, "Hello, World ?= " + new
       String((Key.getStorer(getApplicationContext())).decrypt(
