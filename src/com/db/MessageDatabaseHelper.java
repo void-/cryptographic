@@ -34,25 +34,28 @@ class MessageDatabaseHelper extends SQLiteOpenHelper
   /**
    *  onCreate() creates the database for the first time.
    *
-   *  Uses a big prepared statement.
-   *
    *  @param db SQLiteDatabase for which to create the database.
    */
   @Override
   public void onCreate(SQLiteDatabase db)
   {
-    SQLiteStatement s = db.compileStatement(
-      "CREATE TABLE ? (? ?, ? ?, ? ?);");
-    s.bindString(1, Names.TABLE_NAME);
-    s.bindString(2, Names.SENDER_NAME);
-    s.bindString(3, Names.SENDER_TYPE);
-    s.bindString(4, Names.RECEIPT_DATE);
-    s.bindString(5, Names.RECEIPT_TYPE);
-    s.bindString(6, Names.MESSAGE);
-    s.bindString(7, Names.MESSAGE_TYPE);
-    s.execute();
+    String s = "CREATE TABLE " + Names.TABLE_NAME + "("+ Names.MESSAGE_NO+" "+
+      Names.MESSAGE_NO_TYPE+", "+Names.CONVERSATION_ID +" " +
+      Names.CONVERSATION_ID_TYPE+", "+Names.SENDER_NAME+" "+ Names.SENDER_TYPE+
+      ", "+ Names.RECEIPT_DATE+" "+Names.RECEIPT_TYPE+", "+ Names.MESSAGE+" "+
+      Names.MESSAGE_TYPE+");";
+    Log.d(Names.TAG, s);
+    db.execSQL(s);
+    //db.execSQL("CREATE TABLE " + Names.TABLE_NAME + "("+ Names.MESSAGE_NO+" "+
+    //  Names.MESSAGE_NO_TYPE+", "+Names.CONVERSATION_ID +" " +
+    //  Names.CONVERSATION_ID_TYPE+", "+Names.SENDER_NAME+" "+ Names.SENDER_TYPE+
+    //  ", "+ Names.RECEIPT_DATE+" "+Names.RECEIPT_TYPE+", "+ Names.MESSAGE+" "+
+    //  Names.MESSAGE_TYPE+");");
   }
 
+  /**
+   *  Do nothing; no upgrading this database.
+   */
   @Override
   public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) { }
 }
