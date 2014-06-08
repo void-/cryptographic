@@ -2,6 +2,8 @@ package com.ctxt;
 
 import com.key.Key;
 
+import com.db.MessageInserter;
+
 import android.util.Log;
 import android.os.Bundle;
 import android.content.BroadcastReceiver;
@@ -31,6 +33,7 @@ public class SMSreceiver extends BroadcastReceiver
   private static final String ACTION_SMS_RECEIVED =
     "android.provider.Telephony.SMS_RECEIVED";
   private static String TAG = "smsSERVICE";
+  private static MessageInserter inserter = null;
 
   /**
    *  onReceive() receives an SMS broadcast and decrypts all sms's using the
@@ -49,6 +52,10 @@ public class SMSreceiver extends BroadcastReceiver
   @Override
   public void onReceive(Context context, Intent intent)
   {
+    if(inserter == null)
+    {
+      inserter = new MessageInserter(context);
+    }
     //abort if the intent is for not receiving an sms: some strange intent
     Log.d(TAG, "onReceive() was called");
     if(!SMSreceiver.ACTION_SMS_RECEIVED.equals(intent.getAction()))
@@ -65,17 +72,18 @@ public class SMSreceiver extends BroadcastReceiver
     }
 
     SmsMessage m = null;
-    byte[] decryptedBody = null;
+    //byte[] decryptedBody = null;
     //iterate through all pdus, constructs sms, decrypt contents, push plaintxt
     for(Object pdu: ((Object[]) extras.get("pdus")))
     {
       m = SmsMessage.createFromPdu((byte[]) pdu);
       if(m == null) { continue; }
+      inserter.insertMessage(m);
       ////just log the sender & message body for now; store it later
-      Log.d(TAG, "addr:"+m.getOriginatingAddress());
-      decryptedBody = (Key.getStorer(context)).decrypt(m.getUserData());
-      Log.d(TAG,("body:"+new String((byte[]) ((decryptedBody == null) ?
-        "".getBytes() : decryptedBody))));
+      //Log.d(TAG, "addr:"+m.getOriginatingAddress());
+      //decryptedBody = (Key.getStorer(context)).decrypt(m.getUserData());
+      //Log.d(TAG,("body:"+new String((byte[]) ((decryptedBody == null) ?
+      //  "".getBytes() : decryptedBody))));
     }
   }
 }
