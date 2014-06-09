@@ -13,15 +13,11 @@ import android.content.*;
 import android.view.View;
 import android.widget.EditText;
 import android.util.Log;
-import android.telephony.SmsManager;
 
 public class MainActivity extends Activity
 {
-  SmsManager m;
   private static String NUMBER = "5554";
   private static String TAG = "MAIN_ACTIVITY:";
-  private SMSreceiver thisSMSreceiver;
-  private IntentFilter SMSintentFilter;
 
   /** Called when the activity is first created. */
   @Override
@@ -29,8 +25,6 @@ public class MainActivity extends Activity
   {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
-
-    m = SmsManager.getDefault();
 
     //test ciphers
     Key.getFetcher(getApplicationContext());
@@ -51,16 +45,16 @@ public class MainActivity extends Activity
   }
 
   /**
-   *  onSend() press a button, get a phone number, get the message, encrypt and
-   *  send it to the recipient.
+   *  enterConversation() enter a phone number, enter the conversation thread
+   *  with that phone number.
    */
-  public void onSend(View view)
+  public void enterConversation(View view)
   {
-    String msg = (((EditText) findViewById(R.id.msg)).getText()).toString();
     String no = (((EditText) findViewById(R.id.number)).getText()).toString();
-
-    m.sendDataMessage(no, null, (short) 16101, Fetcher.encrypt(msg.getBytes(),
-      ((Key.getFetcher(getApplicationContext())).fetchKey(no)).getKey()), null,
-      null);
+    Bundle b = new Bundle(1);
+    b.putString(ConversationActivity.NUMBER, no);
+    Intent i = new Intent(this, ConversationActivity.class);
+    i.putExtras(b);
+    startActivity(i);
   }
 }
