@@ -4,30 +4,24 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     >
-<TextView
+<TextView android:id="@+id/recipientName"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:text="Hello World, MainActivity"
+    />
+<TextView android:id="@+id/messages"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
     />
 
-<EditText android:id="@+id/number"
+<EditText android:id="@+id/msg"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:inputType="phone"
-    android:text="1-555-521-5554"
+    android:text="Hello, World! Sent to 5554."
     />
-
-<Button android:id="@+id/enter"
+<Button android:id="@+id/send"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:text="Go"
-    android:onClick="enterConversation"
-    />
-
-<Button android:id="@+id/share"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="@string/button_share"
-    android:onClick="onShare"
+    android:text="@string/button_send"
+    android:onClick="onSend"
     />
 </LinearLayout>
