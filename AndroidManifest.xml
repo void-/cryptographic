@@ -34,6 +34,10 @@
             </intent-filter>
         </activity>
 
+        <activity android:name="com.ctxt.ConversationActivity"
+                  android:label="@string/conversation_name">
+        </activity>
+
         <activity android:name="com.share.KeyShare"
                   android:label="@string/share_name">
             <intent-filter>
