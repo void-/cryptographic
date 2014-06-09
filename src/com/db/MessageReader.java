@@ -97,6 +97,7 @@ public class MessageReader
       senderIndex = c.getColumnIndex(Names.SENDER_NAME);
       dateIndex = c.getColumnIndex(Names.RECEIPT_DATE);
       messageIndex = c.getColumnIndex(Names.MESSAGE);
+      Log.d(Names.TAG, "senderDex:"+senderIndex+";date:"+dateIndex+";msg"+messageIndex);
     }
 
     /**
@@ -113,7 +114,7 @@ public class MessageReader
     @Override
     public boolean hasNext()
     {
-      return c.isAfterLast();
+      return c.moveToNext();
     }
 
     /**
