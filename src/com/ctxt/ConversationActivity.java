@@ -1,33 +1,47 @@
 package com.ctxt;
 
 import com.db.MessageReader;
+import com.db.MessageInserter;
 import com.db.Message;
 import com.key.Key;
 import com.key.Fetcher;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.EditText;
 
+import android.util.Log;
 import android.telephony.SmsManager;
+import android.telephony.PhoneNumberUtils;
+import android.telephony.TelephonyManager; //For storing self public key
 
 public class ConversationActivity extends Activity
 {
   /**
+   *  Class Variables.
    *
+   *  NUMBER used as a key for intent passing.
+   *  TAG used for debugging
    */
   public static final String NUMBER = "ConversationActivity.number";
+  public static final String TAG = "CONVERSATION";
 
   /**
    *  Member Variables.
    *
+   *  m
    *  recipient String for number of the other person the user is talking to.
+   *  reader
+   *  writer
    */
   private SmsManager m;
   private String recipient;
   private MessageReader reader;
+  private MessageInserter writer;
+  private TextView messages;
 
   /**
    *  onCreate() called when first created.
@@ -43,9 +57,20 @@ public class ConversationActivity extends Activity
     reader = new MessageReader(getApplicationContext());
 
     recipient = getIntent().getExtras().getString(ConversationActivity.NUMBER);
-    TextView t = (TextView) findViewById(R.id.recipientName);
-    t.setText(recipient);
+
+    TextView no = (TextView) findViewById(R.id.recipientName);
+    messages = (TextView) findViewById(R.id.messages);
+    no.setText(recipient);
     populateConversation();
+    reader.close();
+    writer = new MessageInserter(getApplicationContext());
+  }
+
+  @Override
+  public void onDestroy()
+  {
+    super.onDestroy();
+    writer.close();
   }
 
   /**
@@ -53,10 +78,9 @@ public class ConversationActivity extends Activity
    */
   private void populateConversation()
   {
-    TextView t = (TextView) findViewById(R.id.messages);
     for(Message m: reader.getConversationIterator(recipient))
     {
-      t.append(m.message);
+      messages.append(m.message);
     }
   }
 
@@ -74,5 +98,7 @@ public class ConversationActivity extends Activity
         .getKey()),
       null,
       null);
+    writer.insertMessage(recipient, msg);
+    messages.append(msg);
   }
 }
