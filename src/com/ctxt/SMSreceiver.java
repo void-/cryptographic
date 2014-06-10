@@ -33,7 +33,12 @@ public class SMSreceiver extends BroadcastReceiver
   private static final String ACTION_SMS_RECEIVED =
     "android.provider.Telephony.SMS_RECEIVED";
   private static String TAG = "smsSERVICE";
-  private static MessageInserter inserter = null;
+  /**
+   *  Member Variables.
+   *
+   *  inserter MessageInserter for inserting new messages into the database.
+   */
+  private MessageInserter inserter;
 
   /**
    *  onReceive() receives an SMS broadcast and decrypts all sms's using the
@@ -52,10 +57,8 @@ public class SMSreceiver extends BroadcastReceiver
   @Override
   public void onReceive(Context context, Intent intent)
   {
-    if(inserter == null)
-    {
-      inserter = new MessageInserter(context);
-    }
+    //open a connection to database to insert new messages
+    inserter = new MessageInserter(context);
     //abort if the intent is for not receiving an sms: some strange intent
     Log.d(TAG, "onReceive() was called");
     if(!SMSreceiver.ACTION_SMS_RECEIVED.equals(intent.getAction()))
@@ -85,5 +88,6 @@ public class SMSreceiver extends BroadcastReceiver
       //Log.d(TAG,("body:"+new String((byte[]) ((decryptedBody == null) ?
       //  "".getBytes() : decryptedBody))));
     }
+    inserter.close();
   }
 }
