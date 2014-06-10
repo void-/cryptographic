@@ -10,6 +10,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.database.Cursor;
 import android.util.Log;
+import android.telephony.PhoneNumberUtils;
 
 import java.util.Iterator;
 
@@ -35,7 +36,15 @@ public class MessageReader
   public MessageReader(Context context)
   {
     this.context = context;
-    db = (new MessageDatabaseHelper(context)).getWritableDatabase();
+    db = (new MessageDatabaseHelper(context)).getReadableDatabase();
+  }
+
+  /**
+   *  close() closes the connection to the database.
+   */
+  public void close()
+  {
+    db.close();
   }
 
   /**
@@ -46,6 +55,7 @@ public class MessageReader
    */
   protected Cursor getConversationCursor(String number)
   {
+    Log.d(Names.TAG, "no:"+PhoneNumberUtils.extractNetworkPortion(PhoneNumberUtils.formatNumber(number)));
     return db.query(Names.TABLE_NAME,
     new String[]
     {
@@ -54,7 +64,8 @@ public class MessageReader
     Names.CONVERSATION_ID+"=?",
     new String[]
     {
-      number
+      PhoneNumberUtils.extractNetworkPortion(
+        PhoneNumberUtils.formatNumber(number))
     },
     null, //no grouping
     null, //no having
@@ -111,6 +122,11 @@ public class MessageReader
       return this;
     }
 
+    /**
+     *  hasNext()
+     *
+     *  @return whether this iterator has at least 1 more element.
+     */
     @Override
     public boolean hasNext()
     {
