@@ -10,7 +10,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 import android.telephony.SmsMessage;
-import android.telephony.PhoneNumberUtils;
 
 /**
  *  MessageInserter provides a writeonly database for storing incoming sms's.
@@ -77,7 +76,7 @@ public class MessageInserter
     Log.d(Names.TAG, "addr:"+m.getOriginatingAddress()+";time:"+
       m.getTimestampMillis()+";msg:"+body);
     //bind the prepared statement
-    newMessageStatement.bindLong(1, Long.parseLong(m.getOriginatingAddress()));
+    newMessageStatement.bindString(1, m.getOriginatingAddress());
     newMessageStatement.bindLong(2, (long)0); //false: The user didnt send this
     newMessageStatement.bindLong(3, m.getTimestampMillis());
     newMessageStatement.bindString(4, body);
@@ -98,8 +97,7 @@ public class MessageInserter
    */
   public void insertMessage(String recipientNumber, String messageBody)
   {
-    newMessageStatement.bindLong(1, Long.parseLong(
-      PhoneNumberUtils.extractNetworkPortion(recipientNumber)));
+    newMessageStatement.bindLong(1, recipientNumber);
     newMessageStatement.bindLong(2, (long)1); //true: The user did send this
     newMessageStatement.bindLong(3, System.currentTimeMillis()); //sent now
     newMessageStatement.bindString(4, messageBody);

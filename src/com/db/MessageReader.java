@@ -10,7 +10,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.database.Cursor;
 import android.util.Log;
-import android.telephony.PhoneNumberUtils;
 
 import java.util.Iterator;
 
@@ -55,7 +54,7 @@ public class MessageReader
    */
   protected Cursor getConversationCursor(String number)
   {
-    Log.d(Names.TAG, "no:"+PhoneNumberUtils.extractNetworkPortion(PhoneNumberUtils.formatNumber(number)));
+    Log.d(Names.TAG, "no:"+number);
     return db.query(Names.TABLE_NAME,
     new String[]
     {
@@ -64,8 +63,7 @@ public class MessageReader
     Names.CONVERSATION_ID+"=?",
     new String[]
     {
-      PhoneNumberUtils.extractNetworkPortion(
-        PhoneNumberUtils.formatNumber(number))
+      number
     },
     null, //no grouping
     null, //no having

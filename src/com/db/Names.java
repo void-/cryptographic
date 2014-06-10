@@ -1,5 +1,7 @@
 package com.db;
 
+
+
 /**
  *  Names static class defines constant database names and schema.
  *
@@ -26,8 +28,8 @@ final class Names
    *  MESSAGE_NO
    *  MESSAGE_NO_TYPE this autoincrements, but on a database-wide level; not
    *    specific to a particular conversation.
-   *  CONVERSATION_ID numeric representation of the other individual in the
-   *    conversation.
+   *  CONVERSATION_ID phone number of the other individual in the conversation;
+   *    international phone numbers are gaurenteed to be 15 characters or less.
    *  CONVERSATION_ID_TYPE
    *  TABLE_NAME
    *  SENDER_NAME boolean that answers the question: Did I send this message?
@@ -46,7 +48,7 @@ final class Names
   static final String MESSAGE_NO = "no";
   static final String MESSAGE_NO_TYPE = "INTEGER PRIMARY KEY";
   static final String CONVERSATION_ID = "conv";
-  static final String CONVERSATION_ID_TYPE = "INT8";
+  static final String CONVERSATION_ID_TYPE = "char(15)";
   static final String SENDER_NAME = "sender";
   static final String SENDER_TYPE = "TINYINT";
   static final String RECEIPT_DATE = "receipt";
