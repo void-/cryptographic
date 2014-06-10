@@ -21,12 +21,17 @@ import java.io.FileOutputStream;
  *
  *  Example usage:
  *    Storer s = new Storer();
+ *    s.generateKeyPair();
  *    byte[] cipherText = --some method that returns ciphertext--
  *    byte[] plainText = s.decrypt(cipherText);
  *    --do something with plainText--
  *
  *  This entails general method usage, but excludes Storer's use in the Key
  *  singleton.
+ *
+ *  Storer is not automatically ready until generateKeyPair() has been called
+ *  at some point in the past. This method generates a public+private key pair
+ *  and stores it on disk.
  *
  *  Design notes:
  *    The private key managed by Storer never leaves Storer. This decreases the
@@ -63,6 +68,7 @@ public class Storer
 
   private PrivateKey k;
   private Cipher c;
+  private boolean keyGenerated;
 
   /**
    *  Storer() constructs a new storer instance.
@@ -80,7 +86,7 @@ public class Storer
       ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
       int nRead;
-      byte[] data = new byte[KEYBITS]; //make a guess on how big it is
+      byte[] data = new byte[KEYBITS]; //make a guess on how big the key is
 
       while((nRead = f.read(data, 0, data.length)) != -1)
       {
@@ -90,42 +96,36 @@ public class Storer
       k = (KeyFactory.getInstance(Storer.ALGORITHM)).generatePrivate(new
         PKCS8EncodedKeySpec((buffer.toByteArray())));
       f.close();
+      this.keyGenerated = true;
+      //initialize Cipher c for decrypt()
+      initializeCipher();
     }
     catch(FileNotFoundException e)
     {
-      KeyPairGenerator kgen = null;
-      try
-      {
-        kgen = KeyPairGenerator.getInstance(Storer.ALGORITHM);
-        kgen.initialize(
-          KEYBITS);
-      }
-      catch(NoSuchAlgorithmException e1) { Log.e(Storer.TAG, "exception", e1);}
-      KeyPair keyPair = kgen.generateKeyPair();
-      this.k = keyPair.getPrivate();
-
-      try
-      {
-        (Key.getFetcher(context)).storeSelfKey(keyPair.getPublic());
-      }
-      catch(KeyAlreadyExistsException e1)
-      { Log.e(Storer.TAG, "exception", e1); }
-
-      //store private key onto disk
-      try
-      {
-        FileOutputStream f = context.openFileOutput(Storer.KEYSTORENAME,
-          Context.MODE_PRIVATE);
-        f.write((new PKCS8EncodedKeySpec(k.getEncoded())).getEncoded());
-        f.close();
-      }
-      catch(IOException e1) {Log.e(Storer.TAG, "exception", e1); }
+      //key has not been generated yet
+      this.keyGenerated = false;
     }
-    catch(IOException e) {Log.e(Storer.TAG, "exception", e); }
-    catch(NoSuchAlgorithmException e) {Log.e(Storer.TAG, "exception", e); }
+    catch(IOException e) {Log.e(Storer.TAG, "IO exception?", e); }
+    catch(NoSuchAlgorithmException e) {Log.e(Storer.TAG, "no algorithm?", e); }
     catch(java.security.spec.InvalidKeySpecException e)
-    {Log.e(Storer.TAG, "exception", e); }
+    {Log.e(Storer.TAG, "bad key spec", e); }
+  }
 
+  /**
+   *  initializeCipher() will initialize Cipher c to preform decryption.
+   *
+   *  The caller of this method must ensure that PrivateKey k actually has a
+   *  meaning value, i.e. generateKeyPair() has been called before.
+   *
+   *  The caller of this method must also ensure that this method is called
+   *  prior to any called to decrypt().
+   */
+  protected void initializeCipher()
+  {
+    if(!keyGenerated)
+    {
+      throw new IllegalStateException("No private key to init cipher with.");
+    }
     try
     {
       this.c = Cipher.getInstance(Storer.ENCRYPTION_MODE);
@@ -138,11 +138,86 @@ public class Storer
   }
 
   /**
+   *  generateKeyPair() will generate the user's public+private key pair for
+   *  the first time.
+   *
+   *  If a key pair currently exists, generateKeyPair() does nothing. If a key
+   *  pair has been generated before[and the private key entry still exists],
+   *  there is no need to call generateKeyPair(). In other words, the key
+   *  resulting from this method call are persistent. The existence of a key
+   *  pair can be determined via a call to isKeyAvailable().
+   *
+   *  This method will also initialize Storer for decryption to function.
+   *  The appropriate call will be made to Fetcher to persistently store the
+   *  public key portion.
+   */
+  public void generateKeyPair()
+  {
+    //do nothing if a key pair has already been generated.
+    if(keyGenerated)
+    {
+      return;
+    }
+    KeyPairGenerator kgen = null;
+    try
+    {
+      kgen = KeyPairGenerator.getInstance(Storer.ALGORITHM);
+      kgen.initialize(
+        KEYBITS);
+    }
+    catch(NoSuchAlgorithmException e1) { Log.e(Storer.TAG, "exception", e1);}
+    KeyPair keyPair = kgen.generateKeyPair();
+    this.k = keyPair.getPrivate();
+
+    //store public key onto disk via Fetcher
+    try
+    {
+      (Key.getFetcher(context)).storeSelfKey(keyPair.getPublic());
+    }
+    catch(KeyAlreadyExistsException e1)
+    { Log.e(Storer.TAG, "exception", e1); }
+
+    //store private key onto disk
+    try
+    {
+      FileOutputStream f = context.openFileOutput(Storer.KEYSTORENAME,
+        Context.MODE_PRIVATE);
+      f.write((new PKCS8EncodedKeySpec(k.getEncoded())).getEncoded());
+      f.close();
+    }
+    catch(IOException e1) {Log.e(Storer.TAG, "exception", e1); }
+    //initialize Cipher c for decrypt()
+    initializeCipher();
+  }
+
+  /**
+   *  isKeyAvailable() returns whether or not a key pair has been generated for
+   *  this user.
+   *
+   *  Specifically, this checks for the existence of the user's private key in
+   *  terms of a file; the public key is not checked.
+   *
+   *  @return whether the user's key pair has been generated or not.
+   */
+  public boolean isKeyAvailable()
+  {
+    return this.keyGenerated;
+  }
+
+  /**
    *  decrypt() given a ciphertext will decrypt it with the private key.
    *
    *  Unfortunately RSA is vulnerable to chosen ciphertext(oops), maybe this
    *  shouldn't be a public method but rather package protected. However, the
    *  callers of this method are likely not in this package.
+   *
+   *  Ensure that generateKeyPair() has been called at any time before(to
+   *  initialize k), and that initializeCipher() has been called after
+   *  instantiation of a new Storer. Calling initializeCipher() should only
+   *  concern the internal methods of Storer.
+   *
+   *  If no private key has been generated yet, decrypt() automatically returns
+   *  null.
    *
    *  @param cipherText byte array containing ciphertext to decrypt.
    *  @return plaintext of given cipherText using the private key.
@@ -150,6 +225,11 @@ public class Storer
    */
   public byte[] decrypt(byte[] cipherText)
   {
+    if(!keyGenerated)
+    {
+      Log.d(Storer.TAG, "Cannot decrypt; private key not generated.");
+      return null;
+    }
     Log.d(TAG, "len:"+cipherText.length);
     try
     {

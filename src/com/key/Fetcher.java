@@ -202,7 +202,11 @@ public class Fetcher
   }
 
   /**
-   *  given plaintext, produce ciphertext.
+   *  encrypt() given plaintext, produces ciphertext.
+   *
+   *  @param plaintext plaintext byte array to encrypt.
+   *  @param k public key to encrypt under.
+   *  @return ciphertext of plaintext under public key k.
    */
   public static byte[] encrypt(byte[] plaintext, PublicKey k)
   {
