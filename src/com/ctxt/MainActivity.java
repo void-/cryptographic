@@ -12,6 +12,9 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.content.*;
 import android.view.View;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MenuInflater;
 import android.widget.EditText;
 import android.util.Log;
 
@@ -35,6 +38,10 @@ public class MainActivity extends Activity
     //  (Key.getFetcher(getApplicationContext())).shareKey().getKey()))));
   }
 
+  /**
+   *  onResume() if no key pair has been generate will launch a dialog to
+   *  generate a public+private key pair.
+   */
   @Override
   public void onResume()
   {
@@ -48,10 +55,28 @@ public class MainActivity extends Activity
   }
 
   /**
-   *  onShareKey() provides a dedicated button to switch to the KeyShare
-   *  activity.
+   *  OnCreateOptionsMenu() is called when creating the action bar and options
+   *  menu at the top of the application.
+   *
+   *  Inflates the action bar and overflow options menu.
+   *
+   *  @return true.
    */
-  public void onShareKey(View view)
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu)
+  {
+    MenuInflater inflater = getMenuInflater();
+    inflater.inflate(R.layout.main_menu, menu);
+    return true;
+  }
+
+  /**
+   *  onShareKey() when the proper menu item is clicked, starts an activity for
+   *  sharing public keys.
+   *
+   *  @param item MenuItem that was clicked; this will always be for share.
+   */
+  public void onShareKey(MenuItem item)
   {
     startActivity(new Intent(this, KeyShare.class));
   }
