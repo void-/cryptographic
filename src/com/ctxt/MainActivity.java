@@ -26,20 +26,25 @@ public class MainActivity extends Activity
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
 
+    //test ciphers
+    //Key.getFetcher(getApplicationContext());
+    //test that decryption is encryption inverse
+    //Log.d(TAG, "Hello, World ?= " + new
+    //  String((Key.getStorer(getApplicationContext())).decrypt(
+    //  Fetcher.encrypt("Hello, World!".getBytes(),
+    //  (Key.getFetcher(getApplicationContext())).shareKey().getKey()))));
+  }
+
+  @Override
+  public void onResume()
+  {
+    super.onResume();
     //no key generated: generate a key via a KeyGenerationDialogFragment
     if(!(Key.getStorer(getApplicationContext())).isKeyAvailable())
     {
       (new KeyGenerationDialogFragment()).show(getFragmentManager(), 
         KeyGenerationDialogFragment.FRAG_TAG);
     }
-
-    //test ciphers
-    Key.getFetcher(getApplicationContext());
-    //test that decryption is encryption inverse
-    Log.d(TAG, "Hello, World ?= " + new
-      String((Key.getStorer(getApplicationContext())).decrypt(
-      Fetcher.encrypt("Hello, World!".getBytes(),
-      (Key.getFetcher(getApplicationContext())).shareKey().getKey()))));
   }
 
   /**
