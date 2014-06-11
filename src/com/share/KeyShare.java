@@ -75,7 +75,8 @@ public class KeyShare extends Activity implements
     //NFC is unavailable
     if(nfcAdapter == null)
     {
-      throw new NullPointerException();
+      return;
+      //throw new NullPointerException();
     }
     this.pairToShare = (Key.getFetcher(getApplicationContext())).shareKey();
     //serialize the NumberKeyPair to share
@@ -114,7 +115,7 @@ public class KeyShare extends Activity implements
   public void onResume()
   {
     super.onResume();
-    if(NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction()))
+    if(nfcAdapter != null && NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction()))
     {
       processIntent(getIntent());
     }
