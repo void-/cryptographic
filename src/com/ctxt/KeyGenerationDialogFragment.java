@@ -61,7 +61,7 @@ public class KeyGenerationDialogFragment extends DialogFragment implements
     input.addTextChangedListener(
       new PhoneNumberFormattingTextWatcher());
     //show edit text if phone number is unavailable
-    input.setVisibility((number == null) ? View.GONE : View.VISIBLE);
+    input.setVisibility((number == null) ? View.VISIBLE : View.GONE);
 
     builder.setView(input);
     builder.setTitle(R.string.generate_title);
