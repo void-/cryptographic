@@ -97,7 +97,7 @@ public class MessageInserter
    */
   public void insertMessage(String recipientNumber, String messageBody)
   {
-    newMessageStatement.bindLong(1, recipientNumber);
+    newMessageStatement.bindString(1, recipientNumber);
     newMessageStatement.bindLong(2, (long)1); //true: The user did send this
     newMessageStatement.bindLong(3, System.currentTimeMillis()); //sent now
     newMessageStatement.bindString(4, messageBody);
