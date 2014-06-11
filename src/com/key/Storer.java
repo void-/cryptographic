@@ -194,6 +194,7 @@ public class Storer
     }
     catch(IOException e1) {Log.e(Storer.TAG, "exception", e1); }
     //initialize Cipher c for decrypt()
+    this.keyGenerated = true;
     initializeCipher();
   }
 
