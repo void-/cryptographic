@@ -1,5 +1,6 @@
 package com.ctxt;
 
+import com.ctxt.KeyGenerationDialogFragment;
 import com.share.KeyShare;
 import com.key.Key;
 import com.key.Storer;
@@ -16,7 +17,6 @@ import android.util.Log;
 
 public class MainActivity extends Activity
 {
-  private static String NUMBER = "5554";
   private static String TAG = "MAIN_ACTIVITY:";
 
   /** Called when the activity is first created. */
@@ -25,6 +25,13 @@ public class MainActivity extends Activity
   {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
+
+    //no key generated: generate a key via a KeyGenerationDialogFragment
+    if(!(Key.getStorer(getApplicationContext())).isKeyAvailable())
+    {
+      (new KeyGenerationDialogFragment()).show(getFragmentManager(), 
+        KeyGenerationDialogFragment.FRAG_TAG);
+    }
 
     //test ciphers
     Key.getFetcher(getApplicationContext());
