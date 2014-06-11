@@ -68,6 +68,7 @@ public class Storer
 
   private PrivateKey k;
   private Cipher c;
+  private Context context;
   private boolean keyGenerated;
 
   /**
@@ -79,6 +80,7 @@ public class Storer
    */
   Storer(Context context)
   {
+    this.context = context;
     try
     {
       //try to load private key from disk
@@ -150,8 +152,13 @@ public class Storer
    *  This method will also initialize Storer for decryption to function.
    *  The appropriate call will be made to Fetcher to persistently store the
    *  public key portion.
+   *
+   *  The user's phone number is needed as an argument to associate with the
+   *  public key for sharing and lookup.
+   *
+   *  @param number String representation of the user's phone number.
    */
-  public void generateKeyPair()
+  public void generateKeyPair(String number)
   {
     //do nothing if a key pair has already been generated.
     if(keyGenerated)
@@ -172,7 +179,7 @@ public class Storer
     //store public key onto disk via Fetcher
     try
     {
-      (Key.getFetcher(context)).storeSelfKey(keyPair.getPublic());
+      (Key.getFetcher(context)).storeSelfKey(number, keyPair.getPublic());
     }
     catch(KeyAlreadyExistsException e1)
     { Log.e(Storer.TAG, "exception", e1); }

@@ -55,10 +55,13 @@ public class Fetcher
    *
    *  TAG constant string representing the tag to use when logging events that
    *    originate from calls to Fetcher methods.
+   *  NUMBER_STORE string representing the file name used to store the user's
+   *    phone number.
    *  context Context under which this app operates. This is used for access to
    *    the filesystem; for key storage.
    */
   private static final String TAG = "FETCHER";
+  private static final String NUMBER_STORE = ".myNumber";
   private static Context context;
 
   /**
@@ -145,8 +148,28 @@ public class Fetcher
    */
   public NumberKeyPair shareKey()
   {
-    return fetchKey(((TelephonyManager)context.getSystemService(
-      Context.TELEPHONY_SERVICE)).getLine1Number());
+    //load key from disk
+    ByteArrayOutputStream buffer = null;
+    try
+    {
+      FileInputStream f = context.openFileInput(Fetcher.NUMBER_STORE);
+      buffer = new ByteArrayOutputStream();
+
+      int nRead;
+      byte[] data = new byte[16]; //at most 15 for international number
+
+      while((nRead = f.read(data, 0, data.length)) != -1)
+      {
+        buffer.write(data, 0, nRead);
+      }
+      f.close();
+    }
+    catch(IOException e)
+    {
+      Log.e(TAG, "Couldn't find number", e);
+      return null;
+    }
+    return fetchKey(new String(buffer.toByteArray()));
   }
 
   /**
@@ -195,10 +218,22 @@ public class Fetcher
    *
    *  @param key user's public key.
    */
-  void storeSelfKey(PublicKey key) throws KeyAlreadyExistsException
+  void storeSelfKey(String number, PublicKey key) throws
+    KeyAlreadyExistsException
   {
-    this.newKey(((TelephonyManager)context.getSystemService(
-      Context.TELEPHONY_SERVICE)).getLine1Number(), key);
+    this.newKey(number, key);
+    //write phone number to file
+    try
+    {
+      FileOutputStream f = context.openFileOutput(Fetcher.NUMBER_STORE,
+        Context.MODE_PRIVATE);
+      f.write(number.getBytes());
+      f.close();
+    }
+    catch(IOException e)
+    {
+      Log.e(TAG, "Couldn't save phone number", e);
+    }
   }
 
   /**
