@@ -90,7 +90,18 @@ public class Fetcher
    */
   public String[] enumerateKeys()
   {
-    return context.fileList();
+    //filter out dot files
+    String[] unFiltered = context.fileList();
+    String[] filtered = new String[unFiltered.length-2];
+    int i = 0;
+    for(String s : unFiltered)
+    {
+      if(s.charAt(0) != '.')
+      {
+        filtered[i++] = s;
+      }
+    }
+    return filtered;
   }
 
   /**
