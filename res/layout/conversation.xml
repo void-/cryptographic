@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     >
@@ -8,20 +7,26 @@
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     />
-<TextView android:id="@+id/messages"
+<ListView android:id="@+id/messages"
     android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="300dp"
+    android:layout_below="@id/recipientName"
+    android:layout_alignParentRight="true"
     />
 
 <EditText android:id="@+id/msg"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:text="Hello, World! Sent to 5554."
+    android:layout_below="@id/messages"
+    android:layout_alignParentRight="true"
     />
 <Button android:id="@+id/send"
-    android:layout_width="wrap_content"
+    android:layout_width="60dp"
     android:layout_height="wrap_content"
     android:text="@string/button_send"
-    android:onClick="onSend"
+    android:layout_below="@id/messages"
+    android:layout_alignParentLeft="true"
+    android:layout_toLeftOf="@id/msg"
     />
-</LinearLayout>
+</RelativeLayout>

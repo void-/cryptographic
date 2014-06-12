@@ -1,5 +1,7 @@
 package com.ctxt;
 
+import com.ctxt.R;
+
 import com.db.MessageReader;
 import com.db.MessageInserter;
 import com.db.Message;
@@ -12,13 +14,16 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.Button;
 
 import android.util.Log;
 import android.telephony.SmsManager;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager; //For storing self public key
 
-public class ConversationActivity extends Activity
+public class ConversationActivity extends Activity implements
+    View.OnClickListener
 {
   /**
    *  Class Variables.
@@ -52,16 +57,20 @@ public class ConversationActivity extends Activity
     super.onCreate(savedInstanceState);
     setContentView(R.layout.conversation);
 
+    reader = new MessageReader(getApplicationContext());
     m = SmsManager.getDefault();
     //open a connection to the database
-    reader = new MessageReader(getApplicationContext());
 
     recipient = getIntent().getExtras().getString(ConversationActivity.NUMBER);
 
     TextView no = (TextView) findViewById(R.id.recipientName);
-    messages = (TextView) findViewById(R.id.messages);
     no.setText(recipient);
-    populateConversation();
+    Button send = (Button) findViewById(R.id.send);
+    send.setOnClickListener(this);
+    //messages = (TextView) findViewById(R.id.messages);
+    //populateConversation();
+    ListView listView = (ListView) findViewById(R.id.messages);
+    listView.setAdapter(reader.getAdapter(this, recipient));
     reader.close();
     writer = new MessageInserter(getApplicationContext());
   }
@@ -85,10 +94,10 @@ public class ConversationActivity extends Activity
   }
 
   /**
-   *  onSend() press a button, get a phone number, get the message, encrypt and
+   *  onClick() press a button, get a phone number, get the message, encrypt and
    *  send it to the recipient.
    */
-  public void onSend(View view)
+  public void onClick(View view)
   {
     String msg = (((EditText) findViewById(R.id.msg)).getText()).toString();
 
@@ -99,6 +108,6 @@ public class ConversationActivity extends Activity
       null,
       null);
     writer.insertMessage(recipient, msg);
-    messages.append(msg);
+    //messages.append(msg);
   }
 }
