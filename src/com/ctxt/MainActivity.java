@@ -16,11 +16,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MenuInflater;
 import android.widget.EditText;
+import android.widget.GridView;
+import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
 import android.util.Log;
 
-public class MainActivity extends Activity
+public class MainActivity extends Activity implements
+  AdapterView.OnItemClickListener
 {
   private static String TAG = "MAIN_ACTIVITY:";
+  protected String[] numbers;
 
   /** Called when the activity is first created. */
   @Override
@@ -28,6 +33,13 @@ public class MainActivity extends Activity
   {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
+
+    GridView gv = (GridView) findViewById(R.id.grid_main);
+    //enumerate keys should be safe even if no key was generated yet
+    this.numbers = Key.getFetcher(getApplicationContext()).enumerateKeys();
+    gv.setAdapter(new ArrayAdapter<String>(this,
+      android.R.layout.simple_list_item_1, numbers));
+    gv.setOnItemClickListener(this);
 
     //test ciphers
     //Key.getFetcher(getApplicationContext());
@@ -82,12 +94,23 @@ public class MainActivity extends Activity
   }
 
   /**
+   *  onItemClick() listens for clicks in the grid view.
+   */
+  @Override
+  public void onItemClick(AdapterView<?> parent, View view, int position,
+      long id)
+  {
+    enterConversation(this.numbers[position]);
+  }
+
+  /**
    *  enterConversation() enter a phone number, enter the conversation thread
    *  with that phone number.
    */
-  public void enterConversation(View view)
+  //public void enterConversation(View view)
+  public void enterConversation(String no)
   {
-    String no = (((EditText) findViewById(R.id.number)).getText()).toString();
+    //String no = (((EditText) findViewById(R.id.number)).getText()).toString();
     Bundle b = new Bundle(1);
     b.putString(ConversationActivity.NUMBER, no);
     Intent i = new Intent(this, ConversationActivity.class);
