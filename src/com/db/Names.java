@@ -45,7 +45,7 @@ final class Names
 
   static final String TABLE_NAME = "message";
 
-  static final String MESSAGE_NO = "no";
+  static final String MESSAGE_NO = "_id";
   static final String MESSAGE_NO_TYPE = "INTEGER PRIMARY KEY";
   static final String CONVERSATION_ID = "conv";
   static final String CONVERSATION_ID_TYPE = "char(15)";

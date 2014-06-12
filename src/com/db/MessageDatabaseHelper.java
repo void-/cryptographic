@@ -17,6 +17,12 @@ import android.util.Log;
  */
 class MessageDatabaseHelper extends SQLiteOpenHelper
 {
+
+  String CREATE_QUERY = "CREATE TABLE " + Names.TABLE_NAME + "("+
+    Names.MESSAGE_NO+" "+ Names.MESSAGE_NO_TYPE+", "+Names.CONVERSATION_ID +" "
+    + Names.CONVERSATION_ID_TYPE+", "+Names.SENDER_NAME+" "+ Names.SENDER_TYPE+
+    ", "+ Names.RECEIPT_DATE+" "+Names.RECEIPT_TYPE+", "+ Names.MESSAGE+" "+
+    Names.MESSAGE_TYPE+");";
   /**
    *  MessageDatabaseHelper() constructs a new MessageDatabaseHelper
    *  instance.
@@ -39,13 +45,8 @@ class MessageDatabaseHelper extends SQLiteOpenHelper
   @Override
   public void onCreate(SQLiteDatabase db)
   {
-    String s = "CREATE TABLE " + Names.TABLE_NAME + "("+ Names.MESSAGE_NO+" "+
-      Names.MESSAGE_NO_TYPE+", "+Names.CONVERSATION_ID +" " +
-      Names.CONVERSATION_ID_TYPE+", "+Names.SENDER_NAME+" "+ Names.SENDER_TYPE+
-      ", "+ Names.RECEIPT_DATE+" "+Names.RECEIPT_TYPE+", "+ Names.MESSAGE+" "+
-      Names.MESSAGE_TYPE+");";
-    Log.d(Names.TAG, s);
-    db.execSQL(s);
+    db.execSQL(CREATE_QUERY);
+    Log.d(Names.TAG, CREATE_QUERY);
     //db.execSQL("CREATE TABLE " + Names.TABLE_NAME + "("+ Names.MESSAGE_NO+" "+
     //  Names.MESSAGE_NO_TYPE+", "+Names.CONVERSATION_ID +" " +
     //  Names.CONVERSATION_ID_TYPE+", "+Names.SENDER_NAME+" "+ Names.SENDER_TYPE+

@@ -1,15 +1,18 @@
 package com.db;
 
+import com.ctxt.R;
+
 import com.db.Names;
 import com.db.MessageDatabaseHelper;
 import com.db.Message;
 
 import android.content.Context;
-import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.database.Cursor;
 import android.util.Log;
+
+import android.widget.SimpleCursorAdapter;
 
 import java.util.Iterator;
 
@@ -19,6 +22,16 @@ import java.util.Iterator;
  */
 public class MessageReader
 {
+  /**
+   *  Class Variables
+   *
+   */
+  protected static final String[] fromColumns = { Names.MESSAGE };
+  protected static final int[] toViews =
+  {
+    android.R.id.text1
+  };
+
   /**
    *  Member Variables.
    *
@@ -34,8 +47,8 @@ public class MessageReader
    */
   public MessageReader(Context context)
   {
-    this.context = context;
     db = (new MessageDatabaseHelper(context)).getReadableDatabase();
+    this.context = context;
   }
 
   /**
@@ -58,7 +71,8 @@ public class MessageReader
     return db.query(Names.TABLE_NAME,
     new String[]
     {
-      Names.SENDER_NAME, Names.RECEIPT_DATE, Names.MESSAGE
+      Names.MESSAGE_NO, Names.SENDER_NAME, Names.RECEIPT_DATE, Names.MESSAGE
+      //message_no NOT necessary for iterator; only for list view
     },
     Names.CONVERSATION_ID+"=?",
     new String[]
@@ -70,6 +84,20 @@ public class MessageReader
     Names.MESSAGE_NO,
     null //no limit
     );
+  }
+
+  /**
+   *  getAdapter() given a context will return a SimpleCursorAdapter over the
+   *  data for displaying the coversation.
+   *
+   *  @param context for cursor adapter.
+   *  @param number String for phone number.
+   *  @return SimpleCursorAdapter for conversation data.
+   */
+  public SimpleCursorAdapter getAdapter(Context context, String number)
+  {
+    return new SimpleCursorAdapter(context, android.R.layout.simple_list_item_1
+      ,getConversationCursor(number), fromColumns, toViews, 0);
   }
 
   /**
