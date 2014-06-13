@@ -9,21 +9,24 @@
     />
 <ListView android:id="@+id/messages"
     android:layout_width="fill_parent"
-    android:layout_height="300dp"
+    android:layout_height="320dp"
     android:layout_below="@id/recipientName"
     android:layout_alignParentRight="true"
+    android:stackFromBottom="true"
+    android:transcriptMode="alwaysScroll"
     />
 
 <EditText android:id="@+id/msg"
-    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:ems="12"
+    android:layout_width="wrap_content"
     android:text="Hello, World! Sent to 5554."
     android:layout_below="@id/messages"
     android:layout_alignParentRight="true"
     />
 <Button android:id="@+id/send"
-    android:layout_width="60dp"
     android:layout_height="wrap_content"
+    android:layout_width="60dp"
     android:text="@string/button_send"
     android:layout_below="@id/messages"
     android:layout_alignParentLeft="true"
