@@ -95,11 +95,12 @@ public class ConversationActivity extends Activity implements
 
   /**
    *  onClick() press a button, get a phone number, get the message, encrypt and
-   *  send it to the recipient.
+   *  send it to the recipient. Clear the message box too.
    */
   public void onClick(View view)
   {
-    String msg = (((EditText) findViewById(R.id.msg)).getText()).toString();
+    TextView t = (EditText) findViewById(R.id.msg);
+    String msg = ((t).getText()).toString();
 
     m.sendDataMessage(recipient, null, (short) 16101,
       Fetcher.encrypt(msg.getBytes(),
@@ -108,6 +109,7 @@ public class ConversationActivity extends Activity implements
       null,
       null);
     writer.insertMessage(recipient, msg);
-    //messages.append(msg);
+    //Clear the message box
+    t.setText("");
   }
 }

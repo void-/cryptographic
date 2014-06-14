@@ -6,6 +6,7 @@
     <string name="KeyShare_display_text">Sharing your public key. Ensure NFC is
       enabled.</string>
     <string name="button_share">share</string>
+    <string name="message_hint">encrypted sms</string>
     <string name="button_send">send</string>
     <string name="generate_button">generate</string>
     <string name="generate_title">Key pair generation</string>
