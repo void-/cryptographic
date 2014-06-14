@@ -35,12 +35,11 @@ public class MessageReader
   /**
    *  Class Variables
    *
+   *  fromColumns
+   *  toView
    */
   protected static final String[] fromColumns = { Names.MESSAGE };
-  protected static final int[] toViews =
-  {
-    android.R.id.text1
-  };
+  protected static final int[] toViews = { R.id.message_text };
 
   /**
    *  Member Variables.
@@ -121,41 +120,33 @@ public class MessageReader
    *
    *  @return Iterator over conversation messages.
    */
+  @Deprecated
   public Iterable<Message> getConversationIterator(String number)
   {
     return new MessageIterator(getConversationCursor(number));
   }
 
+  /**
+   *  MessageCursorAdapter class extends SimpleCursorAdapter to conditionally
+   *  provide different views based upon the results of the query.
+   */
   private class MessageCursorAdapter extends SimpleCursorAdapter
   {
-    ///**
-    // *  given a position, return the view that corresponds to it.
-    // *
-    // */
-    //@Override
-    //public View getView(int position, View convertView, ViewGroup parent)
-    //{
-    //  if(convertView != null)
-    //  {
-    //    return convertView;
-    //  }
-
-    //  convertView = inflater.inflate(R.layout.message, null);
-    //  TextView title = convertView.findById(R.id.message_text);
-    //  title.setText();
-    //  title.setGravity(Gravity.LEFT); //for sent
-    //  title.setGravity(Gravity.RIGHT); //for received
-
-    //}
-
     private static final int COLOR_SENT = android.R.color.black;
     private static final int COLOR_RECEIVED = android.R.color.holo_orange_dark;
 
-    MessageCursorAdapter(Context co, int i, Cursor c, String[] s, int[] j, int k)
+    /**
+     *  MessageCursorAdapter() calls the super constructor.
+     */
+    MessageCursorAdapter(Context co, int i, Cursor c, String[] s, int[] j,
+        int k)
     {
       super(co, i, c, s, j, k);
     }
 
+    /**
+     *  ViewWrapper container class.
+     */
     private class ViewWrapper
     {
       View base;
@@ -174,9 +165,12 @@ public class MessageReader
         }
         return this.label;
       }
-
     }
 
+    /**
+     *  newView()
+     *
+     */
     @Override
     public View newView(Context context, Cursor cursor, ViewGroup parent)
     {
@@ -187,6 +181,11 @@ public class MessageReader
       return row;
     }
 
+    /**
+     *  bindView()
+     *
+     */
+    @Override
     public void bindView(View row, Context context, Cursor c)
     {
       ViewWrapper w = (ViewWrapper) row.getTag();
@@ -204,107 +203,6 @@ public class MessageReader
         //t.setTextColor(android.R.color.primary_text_dark);
       }
       t.setText(c.getString(c.getColumnIndex(Names.MESSAGE)));
-    }
-  }
-
-
-  /**
-   *  MessageAdapter provides a way to create views for a list view.
-   *  This implementor's main difference is that it has a conditional on which
-   *  view to make based upon which message it is handling.
-   *
-   */
-  private abstract class MessageAdapter extends BaseAdapter implements ListAdapter
-  {
-    /**
-     *  Member Variables.
-     *
-     *  c cursor to extract data from.
-     */
-    protected Cursor c;
-    //private View itemView = R.layout.
-
-    /**
-     *  MessageAdapter() constructs a new MessageAdapter given a cursor.
-     */
-    MessageAdapter(Cursor c)
-    {
-      this.c = c;
-    }
-
-    /**
-     *  Inflate and return view.
-     */
-    public View getView(int position, View convertView, ViewGroup parent)
-    {
-      return null;
-    }
-
-    /**
-     *  areAllItemsEnabled() returns whether or not all items in the cursor
-     *  will be displayed.
-     *  
-     *  There are no sorts of separators in the messages, so this method always
-     *  returns true.
-     *
-     *  @return true.
-     */
-    @Override
-    public boolean areAllItemsEnabled()
-    {
-      return true;
-    }
-
-    /**
-     *  isEnabled() given a position, determines whether or not the item there
-     *  is a separator or not. That is to say, whether or not s is both
-     *  selectable and clickable.
-     *
-     *  @return true.
-     */
-    @Override
-    public boolean isEnabled(int position)
-    {
-      return true;
-    }
-
-    /**
-     *  @return the number of items in the cursor
-     */
-    @Override
-    public int getCount()
-    {
-      return c.getCount();
-    }
-
-    /**
-     *  
-     */
-    @Override
-    public View getItem(int position)
-    {
-      return null; //ERR:
-    }
-
-    @Override
-    public long getItemId(int position)
-    {
-      return (long) position;
-    }
-
-    /**
-     *  @return a layout id for the given position.
-     */
-    @Override
-    public int getItemViewType(int position)
-    {
-      return 0;
-    }
-
-    @Override
-    public int getViewTypeCount()
-    {
-      return 1;
     }
   }
 
@@ -328,7 +226,8 @@ public class MessageReader
       senderIndex = c.getColumnIndex(Names.SENDER_NAME);
       dateIndex = c.getColumnIndex(Names.RECEIPT_DATE);
       messageIndex = c.getColumnIndex(Names.MESSAGE);
-      Log.d(Names.TAG, "senderDex:"+senderIndex+";date:"+dateIndex+";msg"+messageIndex);
+      Log.d(Names.TAG, "senderDex:"+senderIndex+";date:"+dateIndex+";msg"+
+        messageIndex);
     }
 
     /**
