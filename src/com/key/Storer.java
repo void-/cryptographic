@@ -11,6 +11,7 @@ import java.security.spec.RSAKeyGenParameterSpec;
 import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.Cipher;
 import java.io.IOException;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.io.ByteArrayOutputStream;
@@ -46,8 +47,12 @@ public class Storer
   /**
    *  Class Variables.
    *
-   *  KEYBITS constant int representing the size of keys to use.
+   *  KEYBITS constant int representing the size of keys to use. 1064 is
+   *    selected because this is the maximum number of bytes that can fit into
+   *    an sms.
    *  ALGORITHM constant string representing which public key algorithm to use.
+   *  ENCRYPTION_MODE
+   *  DIRECTORY
    *  KEYSTORENAME constant string representing the file name used for storing
    *    the private key on disk.
    *  TAG constant string representing the tag to use when logging events that
@@ -56,6 +61,7 @@ public class Storer
   public static final int KEYBITS = 1064;
   public static final String ALGORITHM = "RSA";
   static final String ENCRYPTION_MODE = "RSA/ECB/PKCS1Padding";
+  static final String DIRECTORY = "me";
   private static final String KEYSTORENAME = ".privKey";
   private static final String TAG = "STORER";
 
@@ -84,7 +90,12 @@ public class Storer
     try
     {
       //try to load private key from disk
-      FileInputStream f = context.openFileInput(Storer.KEYSTORENAME);
+      //Open an input stream from ./me/.privKey
+      FileInputStream f = new FileInputStream(
+        new File(
+          context.getDir(
+            Storer.DIRECTORY, Context.MODE_PRIVATE),
+          Storer.KEYSTORENAME));
       ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
       int nRead;
@@ -187,8 +198,11 @@ public class Storer
     //store private key onto disk
     try
     {
-      FileOutputStream f = context.openFileOutput(Storer.KEYSTORENAME,
-        Context.MODE_PRIVATE);
+      FileOutputStream f = new FileOutputStream(
+        new File(
+          context.getDir(
+            Storer.DIRECTORY, Context.MODE_PRIVATE),
+          Storer.KEYSTORENAME));
       f.write((new PKCS8EncodedKeySpec(k.getEncoded())).getEncoded());
       f.close();
     }
