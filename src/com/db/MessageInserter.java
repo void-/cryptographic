@@ -10,6 +10,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 import android.telephony.SmsMessage;
+import android.telephony.PhoneNumberUtils;
 
 /**
  *  MessageInserter provides a writeonly database for storing incoming sms's.
@@ -17,6 +18,7 @@ import android.telephony.SmsMessage;
  */
 public class MessageInserter
 {
+  private static final String DECRYPT_FAILED = "decrypt_failed";
   /**
    *  Member Variables.
    *
@@ -71,7 +73,7 @@ public class MessageInserter
     }
     //decode decrypted bytes into a string
     String body = new String((byte[]) ((decryptedBody != null) ? decryptedBody
-      : "".getBytes()));
+      : DECRYPT_FAILED.getBytes()));
 
     Log.d(Names.TAG, "addr:"+m.getOriginatingAddress()+";time:"+
       m.getTimestampMillis()+";msg:"+body);
@@ -97,7 +99,8 @@ public class MessageInserter
    */
   public void insertMessage(String recipientNumber, String messageBody)
   {
-    newMessageStatement.bindString(1, recipientNumber);
+    newMessageStatement.bindString(1, PhoneNumberUtils.stripSeparators(
+      recipientNumber));
     newMessageStatement.bindLong(2, (long)1); //true: The user did send this
     newMessageStatement.bindLong(3, System.currentTimeMillis()); //sent now
     newMessageStatement.bindString(4, messageBody);

@@ -10,9 +10,19 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.database.Cursor;
+import android.database.ContentObserver;
 import android.util.Log;
 
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.widget.SimpleCursorAdapter;
+import android.widget.BaseAdapter;
+import android.widget.ListAdapter;
+import android.widget.TextView;
+
+import android.telephony.PhoneNumberUtils;
 
 import java.util.Iterator;
 
@@ -77,7 +87,7 @@ public class MessageReader
     Names.CONVERSATION_ID+"=?",
     new String[]
     {
-      number
+      PhoneNumberUtils.stripSeparators(number)
     },
     null, //no grouping
     null, //no having
@@ -96,8 +106,10 @@ public class MessageReader
    */
   public SimpleCursorAdapter getAdapter(Context context, String number)
   {
-    return new SimpleCursorAdapter(context, android.R.layout.simple_list_item_1
-      ,getConversationCursor(number), fromColumns, toViews, 0);
+    //return new SimpleCursorAdapter(context, android.R.layout.simple_list_item_1
+    //  ,getConversationCursor(number), fromColumns, toViews, 0);
+    return new MessageCursorAdapter(context, R.layout.message,
+      getConversationCursor(number), fromColumns, toViews, 0);
   }
 
   /**
@@ -112,6 +124,188 @@ public class MessageReader
   public Iterable<Message> getConversationIterator(String number)
   {
     return new MessageIterator(getConversationCursor(number));
+  }
+
+  private class MessageCursorAdapter extends SimpleCursorAdapter
+  {
+    ///**
+    // *  given a position, return the view that corresponds to it.
+    // *
+    // */
+    //@Override
+    //public View getView(int position, View convertView, ViewGroup parent)
+    //{
+    //  if(convertView != null)
+    //  {
+    //    return convertView;
+    //  }
+
+    //  convertView = inflater.inflate(R.layout.message, null);
+    //  TextView title = convertView.findById(R.id.message_text);
+    //  title.setText();
+    //  title.setGravity(Gravity.LEFT); //for sent
+    //  title.setGravity(Gravity.RIGHT); //for received
+
+    //}
+
+    private static final int COLOR_SENT = android.R.color.black;
+    private static final int COLOR_RECEIVED = android.R.color.holo_orange_dark;
+
+    MessageCursorAdapter(Context co, int i, Cursor c, String[] s, int[] j, int k)
+    {
+      super(co, i, c, s, j, k);
+    }
+
+    private class ViewWrapper
+    {
+      View base;
+      TextView label = null;
+
+      ViewWrapper(View base)
+      {
+        this.base = base;
+      }
+
+      TextView getLabel()
+      {
+        if(label == null)
+        {
+          label = (TextView) base.findViewById(R.id.message_text);
+        }
+        return this.label;
+      }
+
+    }
+
+    @Override
+    public View newView(Context context, Cursor cursor, ViewGroup parent)
+    {
+      LayoutInflater inflater = LayoutInflater.from(context);
+      View row = inflater.inflate(R.layout.message, null);
+      ViewWrapper w = new ViewWrapper(row);
+      row.setTag(w);
+      return row;
+    }
+
+    public void bindView(View row, Context context, Cursor c)
+    {
+      ViewWrapper w = (ViewWrapper) row.getTag();
+      TextView t = w.getLabel();
+
+      //This is where the actual logic goes for picking the view
+      if(c.getShort(c.getColumnIndex(Names.SENDER_NAME)) > 0) //user sent it
+      {
+        t.setGravity(Gravity.LEFT);
+      }
+      else //user received it
+      {
+        t.setGravity(Gravity.RIGHT);
+        t.setBackgroundResource(COLOR_RECEIVED);
+        //t.setTextColor(android.R.color.primary_text_dark);
+      }
+      t.setText(c.getString(c.getColumnIndex(Names.MESSAGE)));
+    }
+  }
+
+
+  /**
+   *  MessageAdapter provides a way to create views for a list view.
+   *  This implementor's main difference is that it has a conditional on which
+   *  view to make based upon which message it is handling.
+   *
+   */
+  private abstract class MessageAdapter extends BaseAdapter implements ListAdapter
+  {
+    /**
+     *  Member Variables.
+     *
+     *  c cursor to extract data from.
+     */
+    protected Cursor c;
+    //private View itemView = R.layout.
+
+    /**
+     *  MessageAdapter() constructs a new MessageAdapter given a cursor.
+     */
+    MessageAdapter(Cursor c)
+    {
+      this.c = c;
+    }
+
+    /**
+     *  Inflate and return view.
+     */
+    public View getView(int position, View convertView, ViewGroup parent)
+    {
+      return null;
+    }
+
+    /**
+     *  areAllItemsEnabled() returns whether or not all items in the cursor
+     *  will be displayed.
+     *  
+     *  There are no sorts of separators in the messages, so this method always
+     *  returns true.
+     *
+     *  @return true.
+     */
+    @Override
+    public boolean areAllItemsEnabled()
+    {
+      return true;
+    }
+
+    /**
+     *  isEnabled() given a position, determines whether or not the item there
+     *  is a separator or not. That is to say, whether or not s is both
+     *  selectable and clickable.
+     *
+     *  @return true.
+     */
+    @Override
+    public boolean isEnabled(int position)
+    {
+      return true;
+    }
+
+    /**
+     *  @return the number of items in the cursor
+     */
+    @Override
+    public int getCount()
+    {
+      return c.getCount();
+    }
+
+    /**
+     *  
+     */
+    @Override
+    public View getItem(int position)
+    {
+      return null; //ERR:
+    }
+
+    @Override
+    public long getItemId(int position)
+    {
+      return (long) position;
+    }
+
+    /**
+     *  @return a layout id for the given position.
+     */
+    @Override
+    public int getItemViewType(int position)
+    {
+      return 0;
+    }
+
+    @Override
+    public int getViewTypeCount()
+    {
+      return 1;
+    }
   }
 
   /**
