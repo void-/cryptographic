@@ -112,6 +112,16 @@ public class MessageReader
   }
 
   /**
+   *  updateAdapter() given an adapter will swap its cursor for a new one and
+   *  notify the adapter that its dataset has changed.
+   */
+  public void updateAdapter(SimpleCursorAdapter a, String number)
+  {
+    a.swapCursor(getConversationCursor(number)).close();
+    a.notifyDataSetChanged();
+  }
+
+  /**
    *  getConversationIterator() given a phone number will return an iterator
    *  over a conversation held between the user and that phone number.
    *
@@ -195,11 +205,13 @@ public class MessageReader
       if(c.getShort(c.getColumnIndex(Names.SENDER_NAME)) > 0) //user sent it
       {
         t.setGravity(Gravity.LEFT);
+        t.setBackgroundResource(COLOR_SENT);
       }
       else //user received it
       {
         t.setGravity(Gravity.RIGHT);
         t.setBackgroundResource(COLOR_RECEIVED);
+        //row.setBackgroundResource(COLOR_RECEIVED);
         //t.setTextColor(android.R.color.primary_text_dark);
       }
       t.setText(c.getString(c.getColumnIndex(Names.MESSAGE)));

@@ -2,6 +2,7 @@ package com.ctxt;
 
 import com.key.Key;
 
+import com.db.Inserter;
 import com.db.MessageInserter;
 
 import android.util.Log;
@@ -33,12 +34,6 @@ public class SMSreceiver extends BroadcastReceiver
   private static final String ACTION_SMS_RECEIVED =
     "android.provider.Telephony.SMS_RECEIVED";
   private static String TAG = "smsSERVICE";
-  /**
-   *  Member Variables.
-   *
-   *  inserter MessageInserter for inserting new messages into the database.
-   */
-  private MessageInserter inserter;
 
   /**
    *  onReceive() receives an SMS broadcast and decrypts all sms's using the
@@ -58,7 +53,8 @@ public class SMSreceiver extends BroadcastReceiver
   public void onReceive(Context context, Intent intent)
   {
     //open a connection to database to insert new messages
-    inserter = new MessageInserter(context);
+
+    MessageInserter inserter = Inserter.getMessageInserter(context);
     //abort if the intent is for not receiving an sms: some strange intent
     Log.d(TAG, "onReceive() was called");
     if(!SMSreceiver.ACTION_SMS_RECEIVED.equals(intent.getAction()))
@@ -88,6 +84,5 @@ public class SMSreceiver extends BroadcastReceiver
       //Log.d(TAG,("body:"+new String((byte[]) ((decryptedBody == null) ?
       //  "".getBytes() : decryptedBody))));
     }
-    inserter.close();
   }
 }

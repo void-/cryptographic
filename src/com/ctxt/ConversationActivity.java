@@ -3,8 +3,10 @@ package com.ctxt;
 import com.ctxt.R;
 
 import com.db.MessageReader;
+import com.db.Inserter;
 import com.db.MessageInserter;
 import com.db.Message;
+import com.db.Updateable;
 import com.key.Key;
 import com.key.Fetcher;
 
@@ -17,13 +19,18 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Button;
 
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
+import android.widget.SimpleCursorAdapter;
+
 import android.util.Log;
 import android.telephony.SmsManager;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager; //For storing self public key
 
 public class ConversationActivity extends Activity implements
-    View.OnClickListener
+    View.OnClickListener, Updateable
 {
   /**
    *  Class Variables.
@@ -47,6 +54,18 @@ public class ConversationActivity extends Activity implements
   private MessageReader reader;
   private MessageInserter writer;
   private TextView messages;
+  private SimpleCursorAdapter adapter;
+
+  //private BroadcastReceiver thisSMSreceiver = new BroadcastReceiver()
+  //{
+  //  @Override
+  //  public void onReceive(Context context, Intent intent)
+  //  {
+  //    Log.d(TAG, "nested onReceive() called.");
+
+  //    ConversationActivity.this.updateConversation(number);
+  //  }
+  //};
 
   /**
    *  onCreate() called when first created.
@@ -70,16 +89,48 @@ public class ConversationActivity extends Activity implements
     //messages = (TextView) findViewById(R.id.messages);
     //populateConversation();
     ListView listView = (ListView) findViewById(R.id.messages);
-    listView.setAdapter(reader.getAdapter(this, recipient));
-    reader.close();
-    writer = new MessageInserter(getApplicationContext());
+    this.adapter = reader.getAdapter(this, recipient);
+    listView.setAdapter(adapter);
+    writer = Inserter.getMessageInserter(getApplicationContext());
+    writer.registerNotification(this);
+
+    //IntentFilter SMSintentFilter = new IntentFilter();
+    //SMSintentFilter.addAction("android.provider.Telephony.SMS_RECEIVED");
+    //registerReceiver(thisSMSreceiver, SMSintentFilter);
   }
 
   @Override
   public void onDestroy()
   {
     super.onDestroy();
-    writer.close();
+    //writer.close();
+    writer.unregisterNotification();
+    reader.close();
+    //unregisterReceiver(thisSMSreceiver);
+  }
+
+  /**
+   *  ConversationSMSreceiver() extends SMSreceiver to provide additional
+   *  functionality for updating the activity it is running in.
+   */
+  //private class ConversationSMSreceiver extends SMSreceiver
+  //{
+  //  /**
+  //   *  only notify the activity that the conversation should be updated.
+  //   */
+  //  @Override
+  //  public void onReceive(Context context, Intent intent)
+  //  {
+  //    //everything should already be in the database, update the activity
+  //    ConversationActivity.this.updateConversation();
+  //  }
+  //}
+
+  public void update()
+  {
+    Log.d(TAG, "updateConversation() called.");
+    //do a check to make sure that the number is the same
+    reader.updateAdapter(adapter, recipient);
   }
 
   /**

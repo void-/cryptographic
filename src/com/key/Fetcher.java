@@ -17,6 +17,7 @@ import javax.crypto.spec.OAEPParameterSpec;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -90,18 +91,7 @@ public class Fetcher
    */
   public String[] enumerateKeys()
   {
-    //filter out dot files
-    String[] unFiltered = context.fileList();
-    String[] filtered = new String[unFiltered.length-2];
-    int i = 0;
-    for(String s : unFiltered)
-    {
-      if(s.charAt(0) != '.')
-      {
-        filtered[i++] = s;
-      }
-    }
-    return filtered;
+    return context.fileList();
   }
 
   /**
@@ -163,7 +153,11 @@ public class Fetcher
     ByteArrayOutputStream buffer = null;
     try
     {
-      FileInputStream f = context.openFileInput(Fetcher.NUMBER_STORE);
+      FileInputStream f = new FileInputStream(
+        new File(
+          context.getDir(
+            Storer.DIRECTORY, Context.MODE_PRIVATE),
+          Fetcher.NUMBER_STORE));
       buffer = new ByteArrayOutputStream();
 
       int nRead;
@@ -236,8 +230,11 @@ public class Fetcher
     //write phone number to file
     try
     {
-      FileOutputStream f = context.openFileOutput(Fetcher.NUMBER_STORE,
-        Context.MODE_PRIVATE);
+      FileOutputStream f = new FileOutputStream(
+        new File(
+          context.getDir(
+            Storer.DIRECTORY, Context.MODE_PRIVATE),
+          Fetcher.NUMBER_STORE));
       f.write(number.getBytes());
       f.close();
     }

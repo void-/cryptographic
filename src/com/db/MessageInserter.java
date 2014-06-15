@@ -1,5 +1,6 @@
 package com.db;
 
+import com.db.Updateable;
 import com.db.Names;
 import com.db.MessageDatabaseHelper;
 
@@ -29,6 +30,7 @@ public class MessageInserter
   private SQLiteDatabase db;
   private SQLiteStatement newMessageStatement;
   private Context context;
+  private Updateable call;
 
   /**
    *  MessageInserter() constructs a new message inserter purposed for
@@ -36,7 +38,7 @@ public class MessageInserter
    *
    *  @param context Context under which the Database should be opened.
    */
-  public MessageInserter(Context context)
+  MessageInserter(Context context)
   {
     this.context = context;
     db = (new MessageDatabaseHelper(context)).getWritableDatabase();
@@ -50,6 +52,23 @@ public class MessageInserter
   public void close()
   {
     db.close();
+  }
+
+  /**
+   *  Call this so that when the database changes, the given method will be
+   *  called.
+   *
+   *  Only one can be registered at a time.
+   *  Call unregisterNotification() to disable.
+   */
+  public void registerNotification(Updateable m)
+  {
+    this.call = m;
+  }
+
+  public void unregisterNotification()
+  {
+    this.call = null;
   }
 
   /**
@@ -84,6 +103,7 @@ public class MessageInserter
     newMessageStatement.bindString(4, body);
     //push data to database
     newMessageStatement.execute();
+    notifyChanged();
   }
 
   /**
@@ -106,5 +126,17 @@ public class MessageInserter
     newMessageStatement.bindString(4, messageBody);
     //push data to database
     newMessageStatement.execute();
+    notifyChanged();
+  }
+
+  /**
+   *  Call when the database changes.
+   */
+  private void notifyChanged()
+  {
+    if(call != null)
+    {
+      this.call.update();
+    }
   }
 }
