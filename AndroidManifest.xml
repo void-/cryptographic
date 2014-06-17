@@ -14,7 +14,8 @@
     <uses-permission android:name="android.permission.READ_SMS"/>
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
 
-    <application android:label="@string/app_name" >
+    <application android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name">
         <!--<service android:name="com.ctxt.CtxtService" android:enabled="true">
             <action android:name="com.ctxt.CtxtService" />
         </service> -->
