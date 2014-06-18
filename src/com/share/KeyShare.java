@@ -26,26 +26,19 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
 
 /**
- *  KeyShare used for sharing public keys.
+ *  KeyShare Activity for sharing public keys via NFC.
  *
- *  I'm not sure exactly what role this class plays in the key sharing process.
- *  I suppose have some method like: startSharingThisKey(pubkey);
+ *  When this Activity is launched, it will set a static payload to share via
+ *  NFC(the user's phone number and public key). It should be the case that
+ *  when two individuals wish to share public keys, the exchange will occur at
+ *  the same time.
+ *
+ *  If NFC is unavailable on the user's device, the KeyShare activity does
+ *  nothing.
  */
 public class KeyShare extends Activity implements
     NfcAdapter.OnNdefPushCompleteCallback
 {
-
-  /**
-   *  Member Variables.
-   *
-   *  nfcAdapter object used for interfacing with nfc communication.
-   *  pairToShare the user's (number:public key) to share via nfc.
-   *  textLog TextView for informing the user which keys have been recieved.
-   */
-  NfcAdapter nfcAdapter;
-  NumberKeyPair pairToShare;
-  TextView textLog;
-
   /**
    *  Class Variables.
    *
@@ -55,13 +48,30 @@ public class KeyShare extends Activity implements
   private static final String TAG = "KEYSHARE";
 
   /**
-   *  onCreate()
-   *  Register callbacks and related; set public key to share.
+   *  Member Variables.
    *
-   *  On setting the Ndef push message.
+   *  nfcAdapter NfcAdapter object used for interfacing with nfc communication.
+   *  pairToShare NumberKeyPair containing the user's (phone number:public key)
+   *    to share via nfc.
+   *  textLog TextView for informing the user which keys have been received or
+   *    were failed to be received.
+   */
+  private NfcAdapter nfcAdapter;
+  protected NumberKeyPair pairToShare;
+  protected TextView textLog;
+
+  /**
+   *  onCreate() registers NFC callbacks and sets the public key to share.
+   *
+   *  If NFC is unavailable on the user's device, the activity will sit idle.
+   *
+   *  On the matter of setting the Ndef push message:
    *  The user's NumberKeyPair is serialized into a byte array.
    *  The Ndef message is a NdefRecord for a MIME type that is simply the
    *    serialization of the NumberKeyPair.
+   *
+   *  @param savedInstance Bundle containing an saved data from a previous
+   *    instance.
    */
   @Override
   public void onCreate(Bundle savedInstance)
@@ -76,7 +86,6 @@ public class KeyShare extends Activity implements
     if(nfcAdapter == null)
     {
       return;
-      //throw new NullPointerException();
     }
     this.pairToShare = (Key.getFetcher(getApplicationContext())).shareKey();
     //serialize the NumberKeyPair to share
@@ -102,32 +111,35 @@ public class KeyShare extends Activity implements
       null,
       bin)}), this);
 
-    //register callback for successful message transmission
+    //register a callback for successful message transmission
     nfcAdapter.setOnNdefPushCompleteCallback(this, this);
   }
 
   /**
-   *  onResume().
+   *  onResume() checks if a new NFC intent is available to process.
    *
-   *  Receive a new intent, if its for nfc, call processIntent() on it.
+   *  If a new intent is available and its for an NDEF discovery, call
+   *  processIntent() on the intent.
    */
   @Override
   public void onResume()
   {
     super.onResume();
-    if(nfcAdapter != null && NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction()))
+    if(nfcAdapter != null &&
+        NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction()))
     {
       processIntent(getIntent());
     }
   }
 
   /**
-   *  onNdefPushComplete() is called upon successfull message transmission.
+   *  onNdefPushComplete() is called upon successful NFC message transmission.
    *
-   *  -----currently nonfunctional because the toast will be made on the binder
-   *  thread and be invisible
+   *  This method currently does nothing because any toast made will be made on
+   *  the binder thread and be invisible to the ui.
    *
    *  Display a toast that the user's public key was shared.
+   *  @param event NfcEvent that has just occurred.
    */
   @Override
   public void onNdefPushComplete(NfcEvent event)
@@ -136,10 +148,11 @@ public class KeyShare extends Activity implements
   }
 
   /**
-   *  onNewIntent() is called when this activity receives a new intent: do it.
+   *  onNewIntent() is called when this activity receives a new intent, when it
+   *  is, set it to be the current intent.
    *  By calling setIntent(), onResume() will be called after.
    *
-   *  @param intent given Intent should already filtered to be NDEF_DISCOVERED.
+   *  @param intent Intent that should already filtered to for NDEF_DISCOVERED.
    */
   @Override
   public void onNewIntent(Intent intent)
@@ -149,7 +162,11 @@ public class KeyShare extends Activity implements
 
   /**
    *  processIntent() given an intent will determine what to do with it.
-   *  In this case, it will always assume it is a new public key.
+   *  In this case, processIntent() always assumes the intent is for receiving
+   *  a public key via NFC.
+   *
+   *  If this method receives an array of NdefMessages in the intent, only the
+   *  first one will be processed.
    *
    *  @param Intent the intent to process: presumably contains an NdefMessage.
    */
@@ -161,7 +178,7 @@ public class KeyShare extends Activity implements
     {
       return;
     }
-    //Extract NdefMessage: process only 1 message
+    //Extract NdefMessage: process only 1 message; ignore all others
     NdefMessage msg = (NdefMessage) rawMsgs[0];
 
     //Deserialize a NumberKeyPair from the NdefRecord payload
@@ -189,10 +206,14 @@ public class KeyShare extends Activity implements
     {
       (Key.getFetcher(getApplicationContext())).newKey(pair.getNumber(),
         pair.getKey());
+      textLog.append("Received key for number:" + pair.getNumber());
+      //TODO: launch a dialog to make sure the phone number is correct
     }
     catch(KeyAlreadyExistsException e)
-    {Log.e(KeyShare.TAG, "exception", e); }
+    {
+      textLog.append("Could not add public key for number:" + pair.getNumber()
+        + "; you already have a public key for this number.");
+    }
     //Write key added to text view; have user verify the phone number is right
-    textLog.append("Received key for number:" + pair.getNumber());
   }
 }
