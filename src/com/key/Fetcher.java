@@ -33,7 +33,7 @@ import java.io.ByteArrayOutputStream;
  *    application executes on. The phrase, "user's public key", refers to the
  *    public key in the (Phone number: Public key), pair with the phone number
  *    of the mobile phone this application executes on. There is only one user
- *    per mobile phone.
+ *    per mobile phone. There is only one public key per user.
  *
  *  Example usage:
  *    Fetcher f = new Fetcher();
@@ -45,6 +45,7 @@ import java.io.ByteArrayOutputStream;
  *  This entails general method usage, but excludes exception handling and the
  *  use of the Key singleton. For actual usage in the rest of the program, get
  *  a static instance of the Fetcher class via calling Key.getFetcher().
+ *  Fetcher's constructor is package protected to prevent non static instances.
  *
  *  The Fetcher class has a particular way to be initialized with respect to
  *  the Storer class. The method, Storer.generateKeyPair() must be called prior
@@ -71,7 +72,7 @@ public class Fetcher
    *    phone number. This is necessary because depending on the particular
    *    mobile phone model, there might be no programmatic way to access the
    *    phone's phone number. The alternative means is to ask the user to enter
-   *    their phone number and save it on disk.
+   *    his or her phone number and save it on disk.
    */
   private static final String TAG = "FETCHER";
   private static final String NUMBER_STORE = ".myNumber";
@@ -117,6 +118,13 @@ public class Fetcher
    *
    *  If the given number does not have a corresponding public key, null is
    *  returned.
+   *
+   *  The given number must be an international number. fetchKey() does not
+   *  know how to format numbers that exclude the area code and or country
+   *  code. For example, "521-5554" would be an *invalid* input because it
+   *  lacks a country code and an area code. On the other hand, "15555215554"
+   *  would be a valid phone number; the delimiters are unnecessary, fetchKey()
+   *  will canonicalize the number to include familiar delimiters.
    *
    *  @param number number to find the public key for.
    *  @return (number: number's public key) NumberKeyPair instance or null.
@@ -172,6 +180,7 @@ public class Fetcher
     ByteArrayOutputStream buffer = null;
     try
     {
+      //Open an input stream from ./me/.myNumber
       FileInputStream f = new FileInputStream(
         new File(
           context.getDir(
