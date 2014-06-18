@@ -5,7 +5,8 @@ import java.io.Serializable;
 
 /**
  *  NumberKeyPair class defines a key-value pair for storing
- *  (phone number: public key) pairs.
+ *  (Phone number: Public key) pairs. Use getter methods, getNumber() and
+ *  getKey() to get the phone number String and PublicKey respectively.
  *
  *  NumberKeyPair objects are immutable once instantiated.
  */
@@ -14,7 +15,7 @@ public class NumberKeyPair implements Serializable
   /**
    *  Member Variables.
    *
-   *  number String representing the phone number that corresponds with the
+   *  number String representing the phone number that corresponds to the
    *    held public key.
    *  key PublicKey representing the public key.
    */
@@ -23,9 +24,13 @@ public class NumberKeyPair implements Serializable
 
   /**
    *  NumberKeyPair constructs a new NumberKeyPair given a string
-   *  representing the phone number and a PublicKey representing the key.
+   *  representing the phone number and a PublicKey representing the key. It is
+   *  preferred if the given phone number is in a standard format for
+   *  consistency.
    *
    *  Once instantiated, this object is immutable.
+   *  @param number String representing the phone number key.
+   *  @param key PublicKey representing the PublicKey value.
    */
   NumberKeyPair(String number, PublicKey key)
   {
@@ -36,7 +41,7 @@ public class NumberKeyPair implements Serializable
   /**
    *  getNumber() returns the number in the (phone number: public key) pair.
    *
-   *  @return number.
+   *  @return String containing the phone number.
    */
   public final String getNumber()
   {
@@ -44,14 +49,16 @@ public class NumberKeyPair implements Serializable
   }
 
   /**
-   *  getKey() returns the key in the (phone number: public key) pair.
+   *  getKey() returns the public key in the (phone number: public key) pair.
    *
-   *  @return key.
+   *  @return PublicKey.
    */
   public final PublicKey getKey()
   {
     return this.key;
   }
+
+  //actually implementing the Serializable methods may be unnecessary
 
 //  /**
 //   *  writeObject() serializes this NumberKeyPair.
@@ -61,7 +68,6 @@ public class NumberKeyPair implements Serializable
 //  @Override
 //  private void writeObject(ObjectOutputStream out) throws IOException
 //  {
-//    //This is cheating
 //    out.writeObject(this);
 //  }
 
