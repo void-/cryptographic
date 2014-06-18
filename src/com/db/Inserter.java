@@ -2,18 +2,25 @@ package com.db;
 
 import com.db.MessageInserter;
 
-import android.content.Context;
+import android.content.Context; //for constructing a MessageInserter
 
 /**
- *  Singleton for message inserter.
+ *  Inserter class is a singleton for the MessageInserter class.
  *
+ *  This design is less than ideal, but it reduces complexity for
+ *  synchronization and registering a callback for when a new sms is received.
  */
 public class Inserter
 {
+  /**
+   *  Class Variables.
+   *
+   *  _INSERTER static MessageInserter instance.
+   */
   static MessageInserter _INSERTER = null;
 
   /**
-   *  Inserter() private constructor prevents instantiation.
+   *  Inserter() private constructor prevents instantiation; does nothing.
    */
   private Inserter() {}
 
@@ -21,8 +28,9 @@ public class Inserter
    *  getMessageInserter() returns a static reference to a MessageInserter
    *  instance.
    *
-   *  Lazily loads.
+   *  The MessageInserter instance is lazily loaded upon first used.
    *
+   *  @param context Context under which to construct the MessageInserter.
    *  @return static MessageInserter instance.
    */
   public static MessageInserter getMessageInserter(Context context)
