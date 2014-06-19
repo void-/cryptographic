@@ -11,4 +11,7 @@
     <string name="generate_button">generate</string>
     <string name="generate_title">Key pair generation</string>
     <string name="phone_number_hint">Enter your number + country code</string>
+    <string name="button_number_accept">accept</string>
+    <string name="button_number_deny">deny</string>
+    <string name="confirm_title">Ensure this phone number is correct</string>
 </resources>
