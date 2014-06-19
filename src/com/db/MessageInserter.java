@@ -41,11 +41,13 @@ public class MessageInserter
    *  context Context under which the application operates and under which the
    *    database is opened.
    *  call Updateable object to call when a new message is inserter.
+   *  callNumber phone number indicating for what conversation to callback.
    */
   private SQLiteDatabase db;
   private SQLiteStatement newMessageStatement;
   private Context context;
   private Updateable call;
+  private String callNumber;
 
   /**
    *  MessageInserter() constructs a new MessageInserter purposed for inserting
@@ -71,18 +73,24 @@ public class MessageInserter
   }
 
   /**
-   *  registerNotification() given an Updateable object will register that
-   *  object to receive an update whenever a new message in inserted via this
-   *  MessageInserter.
+   *  registerNotification() given an Updateable object and phone number will
+   *  register that object to receive an update whenever a new message for that
+   *  number in inserted via this MessageInserter.
    *
    *  Only one Updateable can be registered at a time.
    *  Call unregisterNotification() to disable.
    *
+   *  number must be in an international format with country code and area
+   *  code. Delimiters present in the number do not matter
+   *
    *  @param m Updateable to call when a new message is inserted.
+   *  @param number phone number indicating for which conversations updated to
+   *    callback m.
    */
-  public void registerNotification(Updateable m)
+  public void registerNotification(Updateable m, String number)
   {
     this.call = m;
+    this.callNumber = PhoneNumberUtils.stripSeparators(number);
   }
 
   /**
@@ -97,6 +105,7 @@ public class MessageInserter
   public void unregisterNotification()
   {
     this.call = null;
+    this.callNumber = null;
   }
 
   /**
@@ -128,18 +137,19 @@ public class MessageInserter
     }
     //decode decrypted bytes into a string
     String body = new String(decryptedBody);
+    String recipientNumber = m.getOriginatingAddress();
 
-    Log.d(Names.TAG, "addr:"+m.getOriginatingAddress()+";time:"+
+    Log.d(Names.TAG, "addr:"+ recipientNumber +";time:"+
       m.getTimestampMillis()+";msg:"+body);
     //bind the prepared statement
-    newMessageStatement.bindString(1, m.getOriginatingAddress());
+    newMessageStatement.bindString(1, recipientNumber);
     newMessageStatement.bindLong(2, (long)0); //false: this wasn't sent by user
     newMessageStatement.bindLong(3, m.getTimestampMillis());
     newMessageStatement.bindString(4, body);
     //push data to database
     newMessageStatement.execute();
     //call callback
-    notifyChanged();
+    notifyChanged(recipientNumber);
   }
 
   /**
@@ -157,26 +167,33 @@ public class MessageInserter
    */
   public void insertMessage(String recipientNumber, String messageBody)
   {
-    newMessageStatement.bindString(1, PhoneNumberUtils.stripSeparators(
-      recipientNumber));
+    String number = PhoneNumberUtils.stripSeparators(recipientNumber);
+    newMessageStatement.bindString(1, number);
     newMessageStatement.bindLong(2, (long)1); //true: The user did send this
     newMessageStatement.bindLong(3, System.currentTimeMillis()); //sent now
     newMessageStatement.bindString(4, messageBody);
     //push data to database
     newMessageStatement.execute();
     //call callback
-    notifyChanged();
+    notifyChanged(number);
   }
 
   /**
    *  Callback for when the database is inserted into.
    *
    *  Updateable call's update() method is called. If no callee was set via 
-   *  registerNotification(), nothing happens.
+   *  registerNotification(), nothing happens. Only callback if the number
+   *  received matches the one registered.
+   *
+   *  Given phone number must be in an international format with a country code
+   *  and area code and without any delimiters. "1555215554" is a valid input.
+   *
+   *  @param number String representing the conversation updated without
+   *    delimiters.
    */
-  private void notifyChanged()
+  private void notifyChanged(String number)
   {
-    if(call != null)
+    if(call != null && number.equals(this.callNumber))
     {
       this.call.update();
     }

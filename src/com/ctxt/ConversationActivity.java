@@ -92,7 +92,7 @@ public class ConversationActivity extends Activity implements
     this.adapter = reader.getAdapter(this, recipient);
     listView.setAdapter(adapter);
     writer = Inserter.getMessageInserter(getApplicationContext());
-    writer.registerNotification(this);
+    writer.registerNotification(this, recipient);
 
     //IntentFilter SMSintentFilter = new IntentFilter();
     //SMSintentFilter.addAction("android.provider.Telephony.SMS_RECEIVED");
