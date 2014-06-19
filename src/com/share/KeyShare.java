@@ -1,5 +1,6 @@
 package com.share;
 
+import com.share.ShareConfirmationDialogFragment;
 import com.ctxt.R;
 
 import com.key.Key;
@@ -37,7 +38,8 @@ import java.nio.charset.Charset;
  *  nothing.
  */
 public class KeyShare extends Activity implements
-    NfcAdapter.OnNdefPushCompleteCallback
+    NfcAdapter.OnNdefPushCompleteCallback,
+    ShareConfirmationDialogFragment.ShareConfirmationListener
 {
   /**
    *  Class Variables.
@@ -55,10 +57,14 @@ public class KeyShare extends Activity implements
    *    to share via nfc.
    *  textLog TextView for informing the user which keys have been received or
    *    were failed to be received.
+   *  pairInQuestion NumberKeyPair that must be confirmed by the user before
+   *    adding to Fetcher.
    */
   private NfcAdapter nfcAdapter;
   protected NumberKeyPair pairToShare;
   protected TextView textLog;
+  private boolean numberConfirmed;
+  private NumberKeyPair pairInQuestion;
 
   /**
    *  onCreate() registers NFC callbacks and sets the public key to share.
@@ -79,6 +85,7 @@ public class KeyShare extends Activity implements
     super.onCreate(savedInstance);
     setContentView(R.layout.keyshare);
 
+    numberConfirmed = false;
     textLog = (TextView) findViewById(R.id.textView);
 
     nfcAdapter = NfcAdapter.getDefaultAdapter(this);
@@ -185,7 +192,6 @@ public class KeyShare extends Activity implements
     ByteArrayInputStream b = new ByteArrayInputStream(
       msg.getRecords()[0].getPayload());
     ObjectInput in = null;
-    NumberKeyPair pair = null;
     try
     {
       in = new ObjectInputStream(b);
@@ -195,25 +201,54 @@ public class KeyShare extends Activity implements
     catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
     try
     {
-      pair = (NumberKeyPair) in.readObject();
+      pairInQuestion = (NumberKeyPair) in.readObject();
       b.close();
       in.close();
     }
     catch(ClassNotFoundException e) {Log.e(KeyShare.TAG, "exception", e); }
     catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
-    //Add the new NumberKeyPair public key to the fetcher
+    textLog.append("Received key for number:" + pairInQuestion.getNumber());
+    //launch a dialog to confirm addition of this public key
+    ShareConfirmationDialogFragment f = new ShareConfirmationDialogFragment();
+    Bundle bundle = new Bundle();
+    bundle.putString(ShareConfirmationDialogFragment.PHONE_NUMBER,
+      pairInQuestion.getNumber());
+    f.setArguments(bundle);
+    f.show(getFragmentManager(), ShareConfirmationDialogFragment.FRAG_TAG);
+  }
+
+  /**
+   *  receiveDialogResult() is called when a created dialog for phone number
+   *  confirmation has a button clicked.
+   *
+   *  When called, this method will attempt to add the new public key if the
+   *  user approves it, otherwise do nothing.
+   *
+   *  @param confirmed boolean indicating whether or not the posotive button
+   *    was clicked.
+   */
+  @Override
+  public void receiveDialogResult(boolean confirmed)
+  {
+    //user denied the number
+    if(!confirmed)
+    {
+      textLog.append("Rejected public key for number:" +
+        pairInQuestion.getNumber());
+      return;
+    }
+    //try to add the key
     try
     {
-      (Key.getFetcher(getApplicationContext())).newKey(pair.getNumber(),
-        pair.getKey());
-      textLog.append("Received key for number:" + pair.getNumber());
-      //TODO: launch a dialog to make sure the phone number is correct
+      (Key.getFetcher(getApplicationContext())).newKey(
+        pairInQuestion.getNumber(),
+        pairInQuestion.getKey());
     }
     catch(KeyAlreadyExistsException e)
     {
-      textLog.append("Could not add public key for number:" + pair.getNumber()
-        + "; you already have a public key for this number.");
+      textLog.append("Could not add public key for number:" +
+        pairInQuestion.getNumber() +
+        "; you already have a public key for this number.");
     }
-    //Write key added to text view; have user verify the phone number is right
   }
 }
