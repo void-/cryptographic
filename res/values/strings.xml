@@ -14,4 +14,5 @@
     <string name="button_number_accept">accept</string>
     <string name="button_number_deny">deny</string>
     <string name="confirm_title">Ensure this phone number is correct</string>
+    <string name="out_of_chars">/122</string>
 </resources>

@@ -33,4 +33,19 @@
     android:layout_alignParentLeft="true"
     android:layout_toLeftOf="@id/msg"
     />
+<TextView android:id="@+id/charCount"
+  android:layout_height="wrap_content"
+  android:layout_width="wrap_content"
+  android:text="0"
+  android:layout_below="@id/send"
+  android:layout_alignParentLeft="true"
+  />
+<TextView
+  android:layout_height="wrap_content"
+  android:layout_width="wrap_content"
+  android:layout_below="@id/send"
+  android:layout_alignParentRight="true"
+  android:layout_toRightOf="@id/charCount"
+  android:text="@string/out_of_chars"
+  />
 </RelativeLayout>

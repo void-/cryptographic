@@ -18,6 +18,8 @@ import android.widget.TextView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Button;
+import android.text.TextWatcher;
+import android.text.Editable;
 
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -55,6 +57,8 @@ public class ConversationActivity extends Activity implements
   private MessageInserter writer;
   private TextView messages;
   private SimpleCursorAdapter adapter;
+  private EditText messageBox;
+  private TextView charsLeft;
 
   //private BroadcastReceiver thisSMSreceiver = new BroadcastReceiver()
   //{
@@ -82,6 +86,20 @@ public class ConversationActivity extends Activity implements
 
     recipient = getIntent().getExtras().getString(ConversationActivity.NUMBER);
 
+    this.messageBox = (EditText) findViewById(R.id.msg);
+    charsLeft = (TextView) findViewById(R.id.charCount);
+    messageBox.addTextChangedListener(new TextWatcher()
+    {
+      @Override
+      public void afterTextChanged(Editable e)
+      {
+        charsLeft.setText(String.valueOf(messageBox.length()));
+      }
+      @Override
+      public void beforeTextChanged(CharSequence s, int st, int c, int a) { }
+      @Override
+      public void onTextChanged(CharSequence s, int st, int b, int c) { }
+    });
     TextView no = (TextView) findViewById(R.id.recipientName);
     no.setText(recipient);
     Button send = (Button) findViewById(R.id.send);
@@ -150,8 +168,7 @@ public class ConversationActivity extends Activity implements
    */
   public void onClick(View view)
   {
-    TextView t = (EditText) findViewById(R.id.msg);
-    String msg = ((t).getText()).toString();
+    String msg = (messageBox.getText()).toString();
 
     m.sendDataMessage(recipient, null, (short) 16101,
       Fetcher.encrypt(msg.getBytes(),
@@ -161,6 +178,6 @@ public class ConversationActivity extends Activity implements
       null);
     writer.insertMessage(recipient, msg);
     //Clear the message box
-    t.setText("");
+    messageBox.setText("");
   }
 }
