@@ -73,9 +73,12 @@ public class Fetcher
    *    mobile phone model, there might be no programmatic way to access the
    *    phone's phone number. The alternative means is to ask the user to enter
    *    his or her phone number and save it on disk.
+   *  LEN_MAX the maximum number of bytes that can be fit into an encrypted
+   *    plaintext message body.
    */
   private static final String TAG = "FETCHER";
   private static final String NUMBER_STORE = ".myNumber";
+  public static final int LEN_MAX = 122;
 
   /**
    *  Member Variables.
@@ -282,6 +285,7 @@ public class Fetcher
    *  unchecked exception is probably raised if the given plaintext byte array
    *  exceeds the amount of data the encryption algorithm can accept.
    *
+   *  @throws ArrayIndexOutOfBoundsException if plaintext greater than LEN_MAX.
    *  @param plaintext plaintext byte array to encrypt.
    *  @param k public key to encrypt under.
    *  @return ciphertext of plaintext encrypted under public key k or null.
