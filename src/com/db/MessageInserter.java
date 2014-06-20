@@ -1,5 +1,6 @@
 package com.db;
 
+import com.ctxt.BuildConfig;
 import com.db.Updateable;
 import com.db.Names;
 import com.db.MessageDatabaseHelper;
@@ -132,8 +133,12 @@ public class MessageInserter
     if(decryptedBody == null)
     {
       Log.d(Names.TAG, "Could not decrypt ciphertext: aborting push");
+      //if not debugging, dont add the message
+      if(!BuildConfig.DEBUG)
+      {
+        return;
+      }
       decryptedBody = MessageInserter.DECRYPT_FAILED.getBytes();
-      //return;
     }
     //decode decrypted bytes into a string
     String body = new String(decryptedBody);
