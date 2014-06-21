@@ -61,7 +61,8 @@ public class KeyGenerationDialogFragment extends DialogFragment implements
     input.addTextChangedListener(
       new PhoneNumberFormattingTextWatcher());
     //show edit text if phone number is unavailable
-    input.setVisibility((number == null) ? View.VISIBLE : View.GONE);
+    input.setVisibility(((number == null) || "".equals(number))
+      ? View.VISIBLE : View.GONE);
 
     builder.setView(input);
     builder.setTitle(R.string.generate_title);
@@ -77,19 +78,24 @@ public class KeyGenerationDialogFragment extends DialogFragment implements
    */
   public void onClick(DialogInterface dialog, int which)
   {
-    if(number == null)
+    Log.d(FRAG_TAG, "button clicked");
+    if(number == null || "".equals(number))
     {
       number = (input.getText()).toString();
     }
+    Log.d(FRAG_TAG, "phone number: "+number);
     //not a well-formatted number
-    if(!PhoneNumberUtils.isGlobalPhoneNumber(number))
+    if(!PhoneNumberUtils.isWellFormedSmsAddress(number))
     {
-      return;
+      Log.d(FRAG_TAG, "phone number is not well formed");
+      //return;
     }
 
     //preform key generation
     (Key.getStorer(getActivity())).generateKeyPair(
       PhoneNumberUtils.stripSeparators(number));
+
+    Log.d(FRAG_TAG, "generating key");
 
     //all done
     dismiss();
