@@ -26,6 +26,7 @@ public class MainActivity extends Activity implements
 {
   private static String TAG = "MAIN_ACTIVITY:";
   protected String[] numbers;
+  private GridView gv;
 
   /** Called when the activity is first created. */
   @Override
@@ -34,11 +35,8 @@ public class MainActivity extends Activity implements
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
 
-    GridView gv = (GridView) findViewById(R.id.grid_main);
+    gv = (GridView) findViewById(R.id.grid_main);
     //enumerate keys should be safe even if no key was generated yet
-    this.numbers = Key.getFetcher(getApplicationContext()).enumerateKeys();
-    gv.setAdapter(new ArrayAdapter<String>(this,
-      android.R.layout.simple_list_item_1, numbers));
     gv.setOnItemClickListener(this);
 
     //test ciphers
@@ -64,6 +62,10 @@ public class MainActivity extends Activity implements
       (new KeyGenerationDialogFragment()).show(getFragmentManager(), 
         KeyGenerationDialogFragment.FRAG_TAG);
     }
+    //set the adapter in onResume() incase any new numbers are added
+    this.numbers = Key.getFetcher(getApplicationContext()).enumerateKeys();
+    gv.setAdapter(new ArrayAdapter<String>(this,
+      android.R.layout.simple_list_item_1, numbers));
   }
 
   /**
