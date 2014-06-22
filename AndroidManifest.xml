@@ -36,7 +36,8 @@
         </activity>
 
         <activity android:name="com.ctxt.ConversationActivity"
-                  android:label="@string/conversation_name">
+                  android:label="@string/conversation_name"
+                  android:windowSoftInputMode="stateVisible|adjustPan">
         </activity>
 
         <activity android:name="com.share.KeyShare"
