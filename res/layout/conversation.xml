@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:id="@+id/conversation"
     >
 <TextView android:id="@+id/recipientName"
     android:layout_width="fill_parent"
@@ -16,20 +17,29 @@
     android:transcriptMode="alwaysScroll"
     />
 
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/frame"
+    android:layout_width="fill_parent"
+    android:layout_height="20dp"
+    android:layout_below="@id/conversation"
+    android:layout_alignParentBottom="true"
+    >
+</FrameLayout>
+
 <EditText android:id="@+id/msg"
     android:layout_height="wrap_content"
     android:ems="12"
     android:layout_width="wrap_content"
     android:hint="@string/message_hint"
     android:maxLength="122"
-    android:layout_below="@id/messages"
+    android:layout_above="@id/frame"
     android:layout_alignParentRight="true"
     />
 <Button android:id="@+id/send"
     android:layout_height="wrap_content"
     android:layout_width="60dp"
     android:text="@string/button_send"
-    android:layout_below="@id/messages"
+    android:layout_above="@id/frame"
     android:layout_alignParentLeft="true"
     android:layout_toLeftOf="@id/msg"
     />
@@ -48,4 +58,5 @@
   android:layout_toRightOf="@id/charCount"
   android:text="@string/out_of_chars"
   />
+
 </RelativeLayout>
