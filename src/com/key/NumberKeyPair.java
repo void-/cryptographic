@@ -1,7 +1,16 @@
 package com.key;
 
+import com.key.Storer;
+
+import android.util.Log;
+
 import java.security.PublicKey;
+import java.security.KeyFactory;
+import java.security.spec.X509EncodedKeySpec;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.io.Serializable;
+import java.io.IOException;
 
 /**
  *  NumberKeyPair class defines a key-value pair for storing
@@ -12,6 +21,15 @@ import java.io.Serializable;
  */
 public class NumberKeyPair implements Serializable
 {
+  /**
+   *  Class Variables.
+   *
+   *  TAG constant string representing the tag to use when logging exceptions
+   *    and debug statements that originate from calls to NumberKeyPair
+   *    methods.
+   *
+   */
+  private static final String TAG = "NumberKeyPair";
   /**
    *  Member Variables.
    *
@@ -58,31 +76,61 @@ public class NumberKeyPair implements Serializable
     return this.key;
   }
 
-  //actually implementing the Serializable methods may be unnecessary
+  /**
+   *  writeObject() serializes this NumberKeyPair.
+   *
+   *  The order in which data is serialized:
+   *  Phone number as a UTF-8 string.
+   *  Int representing the length of the encoded public key in bytes.
+   *  The encoded public key as a byte array.
+   *
+   *  @param out ObjectOutputStream to write to.
+   */
+  //@Override
+  private void writeObject(java.io.ObjectOutputStream out) throws IOException
+  {
+    //write the phone number
+    out.writeUTF(this.number);
+    byte[] buffer = (new X509EncodedKeySpec(key.getEncoded()).getEncoded());
+    out.writeInt(buffer.length);
+    out.write(buffer, 0, buffer.length);
+  }
 
-//  /**
-//   *  writeObject() serializes this NumberKeyPair.
-//   *
-//   *  @param out ObjectOutputStream to write to.
-//   */
-//  @Override
-//  private void writeObject(ObjectOutputStream out) throws IOException
-//  {
-//    out.writeObject(this);
-//  }
-
-//  /**
-//   *  readObject() deserializes this NumberKeyPair.
-//   *
-//   *  @param in ObjectInputStream to read from.
-//   */
-//  @Override
-//  private void readObject(java.io.ObjectInputStream in) throws IOException,
-//      ClassNotFoundException
-//  {
-//    //still cheating
-//    NumberKeyPair pair = (NumberKeyPair) in.readObject();
-//    this.number = pair.number;
-//    this.key = pair.key;
-//  }
+  /**
+   *  readObject() deserializes this NumberKeyPair.
+   *
+   *  The order in which data is deserialized:
+   *  Phone number read as a UTF-8 string.
+   *  Int representing the length of the encoded public key in bytes.
+   *  Allocate a byte array this length.
+   *  Read the public key from the stream into the byte array.
+   *  Decode the public key from the byte array.
+   *
+   *  @param in ObjectInputStream to read from.
+   */
+  //@Override
+  private void readObject(java.io.ObjectInputStream in) throws IOException,
+      ClassNotFoundException
+  {
+    //read back the phone number
+    this.number = in.readUTF();
+    //read the length of the public key
+    int len = in.readInt();
+    byte[] buffer = new byte[len];
+    //read the public key and decode it
+    in.read(buffer, 0, len);
+    try
+    {
+      this.key = (KeyFactory.getInstance(Storer.ALGORITHM)).generatePublic(
+        new X509EncodedKeySpec((buffer)));
+    }
+    catch(NoSuchAlgorithmException e)
+    {
+      Log.e(TAG, "Bad algorithm.", e);
+    }
+    catch(InvalidKeySpecException e)
+    {
+      Log.e(TAG, "Problem decoding key; might have been modified.", e);
+    }
+  }
 }
