@@ -31,6 +31,8 @@ import android.telephony.SmsManager;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager; //For storing self public key
 
+import android.app.PendingIntent;
+
 public class ConversationActivity extends Activity implements
     View.OnClickListener, Updateable
 {
@@ -39,9 +41,15 @@ public class ConversationActivity extends Activity implements
    *
    *  NUMBER used as a key for intent passing.
    *  TAG used for debugging
+   *  PORT
+   *  SENT
+   *  RECEIVED
    */
   public static final String NUMBER = "ConversationActivity.number";
   public static final String TAG = "CONVERSATION";
+  public static final short PORT = (short)8901;
+  static final String SENT = "ConversationActivity.SMS_SENT";
+  static final String RECEIVED = "ConversationActivity.SMS_RECEIVED";
 
   /**
    *  Member Variables.
@@ -60,16 +68,16 @@ public class ConversationActivity extends Activity implements
   private EditText messageBox;
   private TextView charsLeft;
 
-  //private BroadcastReceiver thisSMSreceiver = new BroadcastReceiver()
-  //{
-  //  @Override
-  //  public void onReceive(Context context, Intent intent)
-  //  {
-  //    Log.d(TAG, "nested onReceive() called.");
-
-  //    ConversationActivity.this.updateConversation(number);
-  //  }
-  //};
+  private BroadcastReceiver thisSMSreceiver = new BroadcastReceiver()
+    {
+      @Override
+      public void onReceive(Context context, Intent intent)
+      {
+        Log.d(TAG, "nested onReceive() called.");
+        Log.d(TAG, "intent action:"+intent.getAction());
+        Log.d(TAG, "result code:"+getResultCode());
+      }
+    };
 
   /**
    *  onCreate() called when first created.
@@ -112,9 +120,11 @@ public class ConversationActivity extends Activity implements
     writer = Inserter.getMessageInserter(getApplicationContext());
     writer.registerNotification(this, recipient);
 
-    //IntentFilter SMSintentFilter = new IntentFilter();
-    //SMSintentFilter.addAction("android.provider.Telephony.SMS_RECEIVED");
-    //registerReceiver(thisSMSreceiver, SMSintentFilter);
+    //register received for sent&received broadcasts
+    IntentFilter SMSintentFilter = new IntentFilter();
+    SMSintentFilter.addAction(SENT);
+    SMSintentFilter.addAction(RECEIVED);
+    registerReceiver(thisSMSreceiver, SMSintentFilter);
   }
 
   @Override
@@ -124,7 +134,7 @@ public class ConversationActivity extends Activity implements
     //writer.close();
     writer.unregisterNotification();
     reader.close();
-    //unregisterReceiver(thisSMSreceiver);
+    unregisterReceiver(thisSMSreceiver);
   }
 
   /**
@@ -170,12 +180,14 @@ public class ConversationActivity extends Activity implements
   {
     String msg = (messageBox.getText()).toString();
 
-    m.sendDataMessage(recipient, null, (short) 16101,
+    m.sendDataMessage(PhoneNumberUtils.stripSeparators(recipient), null, PORT,
       Fetcher.encrypt(msg.getBytes(),
         ((Key.getFetcher(getApplicationContext())).fetchKey(recipient))
         .getKey()),
-      null,
-      null);
+      PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(SENT),
+        Intent.FILL_IN_ACTION),
+      PendingIntent.getBroadcast(getApplicationContext(), 0,
+        new Intent(RECEIVED), Intent.FILL_IN_ACTION));
     writer.insertMessage(recipient, msg);
     //Clear the message box
     messageBox.setText("");
