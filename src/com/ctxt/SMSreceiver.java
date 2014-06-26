@@ -56,7 +56,7 @@ public class SMSreceiver extends BroadcastReceiver
 
     MessageInserter inserter = Inserter.getMessageInserter(context);
     //abort if the intent is for not receiving an sms: some strange intent
-    Log.d(TAG, "onReceive() was called");
+    Log.d(TAG, "NEW MESSAGE: onReceive() was called");
     if(!SMSreceiver.ACTION_SMS_RECEIVED.equals(intent.getAction()))
     {
       Log.d(TAG, "Received a non-sms intent.");
