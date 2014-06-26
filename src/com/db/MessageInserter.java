@@ -142,7 +142,7 @@ public class MessageInserter
     }
     //decode decrypted bytes into a string
     String body = new String(decryptedBody);
-    String recipientNumber = m.getOriginatingAddress();
+    String recipientNumber = (m.getOriginatingAddress()).replaceAll("\\+", "");
 
     Log.d(Names.TAG, "addr:"+ recipientNumber +";time:"+
       m.getTimestampMillis()+";msg:"+body);
