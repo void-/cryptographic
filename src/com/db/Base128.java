@@ -29,6 +29,7 @@ public class Base128
     return s.toString();
   }
 
+  //septet -> utf16 char
   protected static char[] map =
   {
     '@', '£', '$', '¥', 'è', 'é', 'ù', 'ì', 'ò', 'Ç', '\n', 'Ø', 'ø', '\r',
@@ -45,6 +46,7 @@ public class Base128
 
   protected static SparseIntArray reverseMap = new SparseIntArray();
 
+  //utf16 char -> septet
   static
   {
     int i = 0;

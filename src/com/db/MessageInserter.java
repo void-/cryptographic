@@ -132,26 +132,11 @@ public class MessageInserter
     //decrypt the sms body
     Log.d(Names.TAG, m.getMessageBody());
     Log.d(Names.TAG, "len:"+(m.getMessageBody()).length());
-    //byte[] raw = m.getPdu();
-    //byte[] encryptedBody = new byte[Storer.KEYBITS>>3];
-    //for(int i = 0; i < encryptedBody.length; ++i)
-    //{
-    //  encryptedBody[encryptedBody.length-1-i] = raw[(raw.length-1)-i];
-    //}
 
-    byte[] encryptedBody = Base128.decode(m.getMessageBody());
-    //read in the number of bytes of the string backwards from pdu to buffer
-    //byte[] pdu = m.getPdu();
-    //byte[] encryptedBody = new byte[(m.getMessageBody()).length()];
-    //Log.d(Names.TAG, "pdu length:"+pdu.length);
-    //hexify(pdu);
-    //for(int i = 0; i < encryptedBody.length; ++i)
-    //{
-    //  encryptedBody[(encryptedBody.length-1)-i] = pdu[(pdu.length-1)-i];
-    //}
-    ////byte[] encryptedBody = m.getUserData();
-    ////Log.d(Names.TAG, "ud len:"+encryptedBody.length);
-
+    //only decode if its a proper length
+    //byte[] encryptedBody = (m.getMessageBody().length() == (Storer.KEYBITS>>3))
+    //  ? (Base128.decode(m.getMessageBody())) : null;
+    byte[] encryptedBody = (Base128.decode(m.getMessageBody()));
     hexify(encryptedBody);
 
     byte[] decryptedBody =
@@ -233,6 +218,10 @@ public class MessageInserter
 
   private static void hexify(byte[] bytes)
   {
+    if(bytes == null)
+    {
+      return;
+    }
     char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
            'B', 'C', 'D', 'E', 'F' };
     char[] hexChars = new char[bytes.length * 2];
@@ -244,5 +233,15 @@ public class MessageInserter
       hexChars[j * 2 + 1] = HEX_CHARS[v & 0x0F];
     }
     Log.d(Names.TAG, new String(hexChars));
+  }
+
+  /**
+   *  finalize() implemented because cursor needs to be closed. No caller will
+   *  close this MessageInserter because it is used with a singleton.
+   */
+  @Override
+  protected void finalize()
+  {
+    this.close();
   }
 }
