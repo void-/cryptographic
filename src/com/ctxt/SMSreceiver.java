@@ -75,6 +75,7 @@ public class SMSreceiver extends BroadcastReceiver
     //iterate through all pdus, constructs sms, decrypt contents, push plaintxt
     for(Object pdu: ((Object[]) extras.get("pdus")))
     {
+      hexify((byte[])pdu);
       m = SmsMessage.createFromPdu((byte[]) pdu);
       if(m == null) { continue; }
       inserter.insertMessage(m);
@@ -84,5 +85,20 @@ public class SMSreceiver extends BroadcastReceiver
       //Log.d(TAG,("body:"+new String((byte[]) ((decryptedBody == null) ?
       //  "".getBytes() : decryptedBody))));
     }
+  }
+
+  private static void hexify(byte[] bytes)
+  {
+    char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
+           'B', 'C', 'D', 'E', 'F' };
+    char[] hexChars = new char[bytes.length * 2];
+    int v;
+    for(int j = 0; j < bytes.length; j++)
+    {
+      v = bytes[j] & 0xFF;
+      hexChars[j * 2] = HEX_CHARS[v >>> 4];
+      hexChars[j * 2 + 1] = HEX_CHARS[v & 0x0F];
+    }
+    Log.d(TAG, new String(hexChars));
   }
 }
