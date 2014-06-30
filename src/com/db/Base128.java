@@ -198,6 +198,18 @@ public class Base128
     return reverseMap.get(c);
   }
 
+  //8 septets -> 7 bytes
+  private static void packSeptets(int i, int j, String s, byte[] o)
+  {
+    o[0+j] = (byte)(((findSeptet(s.charAt(0+i))<<1) | ((findSeptet(s.charAt(1+i))&0x40)>>>6))&0xff);
+    o[1+j] = (byte)(((findSeptet(s.charAt(1+i))<<2) | ((findSeptet(s.charAt(2+i))&0x60)>>>5))&0xff);
+    o[2+j] = (byte)(((findSeptet(s.charAt(2+i))<<3) | ((findSeptet(s.charAt(3+i))&0x70)>>>4))&0xff);
+    o[3+j] = (byte)(((findSeptet(s.charAt(3+i))<<4) | ((findSeptet(s.charAt(4+i))&0x78)>>>3))&0xff);
+    o[4+j] = (byte)(((findSeptet(s.charAt(4+i))<<5) | ((findSeptet(s.charAt(5+i))&0x7c)>>>2))&0xff);
+    o[5+j] = (byte)(((findSeptet(s.charAt(5+i))<<6) | ((findSeptet(s.charAt(6+i))&0x7e)>>>1))&0xff);
+    o[6+j] = (byte)(((findSeptet(s.charAt(6+i))<<7) |  (findSeptet(s.charAt(7+i))&0x7f))&0xff);
+  }
+
   /**
    *  decode() given a String produced from encode() will return the original
    *  blob.
@@ -205,24 +217,9 @@ public class Base128
   public static byte[] decode(String septets)
   {
     byte[] ret = new byte[(septets.length()*7)>>3];
-    int curr, next;
-    int i = 0;
-    int k = 0;
-    for(int j = 0; (j < ret.length) && (i < septets.length()); ++j)
+    for(int i = 0, j = 0; j < ret.length; j+=7, i+=8)
     {
-      curr = findSeptet(septets.charAt(i));
-      next = ((i+1) < septets.length()) ? findSeptet(septets.charAt(i+1)) : 0;
-      int rec = (curr<<(k+1))|(next>>>(6-k));
-      //shift next by 1: advance next by 2
-      if((j%6 == 0) && (j>0) && ((j+2) < ret.length))
-      {
-        ++i;
-        ++k;
-      }
-      ++i;
-      k = (k < 7) ? k+1 : 0;
-
-      ret[j] = (byte)(rec&0xff);
+      packSeptets(i, j, septets, ret);
     }
     return ret;
   }
@@ -244,9 +241,10 @@ public class Base128
      */
     private int septetCount;
     private int i = 0;
-    private int j = 0;
+    private int j = 8;
     private int prev = 0;
     private byte[] b;
+    private int[] buf;
 
     /**
      *  Septets constructs a new iterator over the septets in given byte array.
@@ -257,6 +255,7 @@ public class Base128
     {
       this.b = b;
       septetCount = (b.length<<3)/7;
+      buf = new int[8];
     }
 
     /**
@@ -277,6 +276,18 @@ public class Base128
       return (septetCount > 0);
     }
 
+    private void loadBuffer(int i)
+    {
+      buf[0] = b[i+0]>>>1;
+      buf[1] = (b[i+0]<<6) | ((b[i+1]&0xff)>>>2);
+      buf[2] = (b[i+1]<<5) | ((b[i+2]&0xff)>>>3);
+      buf[3] = (b[i+2]<<4) | ((b[i+3]&0xff)>>>4);
+      buf[4] = (b[i+3]<<3) | ((b[i+4]&0xff)>>>5);
+      buf[5] = (b[i+4]<<2) | ((b[i+5]&0xff)>>>6);
+      buf[6] = (b[i+5]<<1) | ((b[i+6]&0xff)>>>7);
+      buf[7] = b[i+6];
+    }
+
     /**
      *  next() produces the next septet in the sequence.
      *
@@ -285,20 +296,14 @@ public class Base128
     @Override
     public Byte next()
     {
-      int curr = ((i < b.length) ? b[i] : 0)&(0xff);
-      int ret = (curr>>>((j&7)+1)|(prev<<(7-(j&7))))&0x7f;
-
-      --septetCount;
-      prev = 0;
-      if(((j%7) == 0) && (j>0) && (septetCount>1))
+      if(j == 8)
       {
-        --i;
+        loadBuffer(i);
+        i += 7;
+        j = 0;
       }
-      prev = curr;
-      ++i;
-      ++j;
-
-      return (byte)(ret&0x7f);
+      --septetCount;
+      return (byte)(buf[j++]&0x7f);
     }
 
     @Override
