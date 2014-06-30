@@ -8,6 +8,8 @@ import com.key.Fetcher;
 import com.key.NumberKeyPair;
 import com.key.KeyAlreadyExistsException;
 
+import com.db.Base128;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.content.*;
@@ -46,6 +48,21 @@ public class MainActivity extends Activity implements
     //  String((Key.getStorer(getApplicationContext())).decrypt(
     //  Fetcher.encrypt("Hello, World!".getBytes(),
     //  (Key.getFetcher(getApplicationContext())).shareKey().getKey()))));
+
+    //for(int i = 0; i < 50; ++i)
+    //{
+    //  byte[] a = {(byte)i, (byte)(i+17), (byte)(i-2), (byte)i, (byte)(i+28), (byte)(i<<3), (byte)(i-5), (byte)(i&12)};
+    //  byte[] b = Base128.decode(Base128.encode(a));
+    //  ConversationActivity.hexify(a);
+    //  ConversationActivity.hexify(b);
+    //  for(int j = 0; j < a.length; ++j)
+    //  {
+    //    if(a[j] != b[j])
+    //    {
+    //      throw new IllegalStateException(i+","+j);
+    //    }
+    //  }
+    //}
   }
 
   /**
