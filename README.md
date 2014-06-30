@@ -1,8 +1,8 @@
 Crytographic
 ===========
-Public key cryptography layered on sms communication
-Messaging is intended to be as seamless as possible
-Communication currently works on GSM phone
+* Public key cryptography layered on sms communication
+* Messaging is intended to be as seamless as possible
+* Communication currently works on GSM phone
 
 Real Life Usage
 ==============
