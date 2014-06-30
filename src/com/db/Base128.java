@@ -202,23 +202,28 @@ public class Base128
    *  decode() given a String produced from encode() will return the original
    *  blob.
    */
-  public static byte[] decode(String s)
+  public static byte[] decode(String septets)
   {
-    byte[] ret = new byte[(s.length()*7)>>3];
+    byte[] ret = new byte[(septets.length()*7)>>3];
+    int curr, next;
     int i = 0;
-    int j = 0;
-    int curr;
-    int next;
-    do
+    int k = 0;
+    for(int j = 0; (j < ret.length) && (i < septets.length()); ++j)
     {
-      curr = findSeptet(s.charAt(i));
-      next = (i < (s.length()-1)) ? findSeptet(s.charAt(i+1)) : 0;
-      ret[i] = (byte)(((curr<<(j+1))|(next>>>(6-j)))&(byte)0xff);
+      curr = findSeptet(septets.charAt(i));
+      next = ((i+1) < septets.length()) ? findSeptet(septets.charAt(i+1)) : 0;
+      int rec = (curr<<(k+1))|(next>>>(6-k));
+      //shift next by 1: advance next by 2
+      if((j%6 == 0) && (j>0) && ((j+2) < ret.length))
+      {
+        ++i;
+        ++k;
+      }
       ++i;
-      j = ((j < 6) ? (j+1) : 0); //mod 6
-    }
-    while(i < s.length());
+      k = (k < 7) ? k+1 : 0;
 
+      ret[j] = (byte)(rec&0xff);
+    }
     return ret;
   }
 
