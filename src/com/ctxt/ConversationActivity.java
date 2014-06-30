@@ -182,118 +182,32 @@ public class ConversationActivity extends Activity implements
   {
     String msg = (messageBox.getText()).toString();
 
-    if("text".equals(msg))
-    {
-      m.sendTextMessage(PhoneNumberUtils.stripSeparators(recipient), null,
-        "Hello, World!", 
-        PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(SENT),
-          Intent.FILL_IN_ACTION),
-        PendingIntent.getBroadcast(getApplicationContext(), 0,
-          new Intent(RECEIVED), Intent.FILL_IN_ACTION)
-      );
-    }
-    else if("data".equals(msg))
-    {
-      m.sendDataMessage(PhoneNumberUtils.stripSeparators(recipient), null,
-        PORT,
-        "8bit:Hello, World!".getBytes(), 
-        PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(SENT),
-          Intent.FILL_IN_ACTION),
-        PendingIntent.getBroadcast(getApplicationContext(), 0,
-          new Intent(RECEIVED), Intent.FILL_IN_ACTION)
-      );
-    }
-    else if("sigma".equals(msg))
-    {
-      m.sendTextMessage(PhoneNumberUtils.stripSeparators(recipient), null,
-        "Σ", 
-        PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(SENT),
-          Intent.FILL_IN_ACTION),
-        PendingIntent.getBroadcast(getApplicationContext(), 0,
-          new Intent(RECEIVED), Intent.FILL_IN_ACTION)
-      );
-    }
-    else if("hack".equals(msg))
-    {
-      byte[] cipherText = Fetcher.encrypt(msg.getBytes(),
-        ((Key.getFetcher(getApplicationContext())).fetchKey(recipient))
-          .getKey());
+    byte[] cipherText = Fetcher.encrypt(msg.getBytes(),
+      ((Key.getFetcher(getApplicationContext())).fetchKey(recipient))
+        .getKey());
 
-      hexify(cipherText);
+    hexify(cipherText);
 
-      //String encodedMsg = hackyEncode(cipherText);
-      String encodedMsg = Base128.encode(cipherText);
-      Log.d(TAG, "string len:" + encodedMsg.length());
-      Log.d(TAG, encodedMsg);
+    String encodedMsg = Base128.encode(cipherText);
+    Log.d(TAG, encodedMsg);
+    Log.d(TAG, "string len:" + encodedMsg.length());
 
-      //let the unicode string get converted back into binary blob
-      this.m.sendTextMessage(PhoneNumberUtils.stripSeparators(recipient), null,
-        encodedMsg,
-        PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(SENT),
-          Intent.FILL_IN_ACTION),
-        PendingIntent.getBroadcast(getApplicationContext(), 0,
-          new Intent(RECEIVED), Intent.FILL_IN_ACTION)
-      );
-    }
-    else
-    {
-      m.sendDataMessage(PhoneNumberUtils.stripSeparators(recipient), null, PORT,
-        Fetcher.encrypt(msg.getBytes(),
-          ((Key.getFetcher(getApplicationContext())).fetchKey(recipient))
-          .getKey()),
-        PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(SENT),
-          Intent.FILL_IN_ACTION),
-        PendingIntent.getBroadcast(getApplicationContext(), 0,
-          new Intent(RECEIVED), Intent.FILL_IN_ACTION));
-      //m.sendTextMessage(PhoneNumberUtils.stripSeparators(recipient), null,
-      //  (SmsMessage.createFromPdu((SmsMessage.getSubmitPdu("15555215554", "1234567890",
-      //    PORT,
-      //      Fetcher.encrypt(msg.getBytes(),
-      //        ((Key.getFetcher(getApplicationContext())).fetchKey(recipient))
-      //        .getKey()),
-      //    false)).encodedMessage)).getMessageBody(),
-      //  PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(SENT),
-      //    Intent.FILL_IN_ACTION),
-      //  PendingIntent.getBroadcast(getApplicationContext(), 0,
-      //    new Intent(RECEIVED), Intent.FILL_IN_ACTION));
-    }
+    //let the unicode string get converted back into binary blob
+    this.m.sendTextMessage(PhoneNumberUtils.stripSeparators(recipient), null,
+      encodedMsg,
+      PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(SENT),
+        Intent.FILL_IN_ACTION),
+      PendingIntent.getBroadcast(getApplicationContext(), 0,
+        new Intent(RECEIVED), Intent.FILL_IN_ACTION)
+    );
     writer.insertMessage(recipient, msg);
     //Clear the message box
     messageBox.setText("");
   }
 
-  //byte[] -> string with gsm characters
-  private static String hackyEncode(byte[] cipherText)
-  {
-    byte[] pdu = new byte[27 + cipherText.length];
-    pdu[0] = 0x07;
-    pdu[1] = (byte)0x91;
-    pdu[8] = 0x04;
-    pdu[9] = 0x0B;
-    pdu[10] = (byte)0x91;
-    pdu[26] = (byte)cipherText.length;
-    //copy ciphertext into pdu
-    for(int i = 0; i < cipherText.length; ++i)
-    {
-      pdu[i+27] = cipherText[i];
-    }
-
-    SmsMessage m = SmsMessage.createFromPdu(pdu);
-    byte[] b = m.getUserData();
-    Log.d(TAG, "byte len:"+b.length);
-    hexify(cipherText);
-    hexify(b);
-    hexify(m.getPdu());
-    //boolean same = true;
-    //for(int i = 0; i < cipherText.length; ++i)
-    //{
-    //  same &= (b[i] == cipherText[i]);
-    //}
-    //Log.d(TAG, "same?:"+same);
-
-    return m.getMessageBody();
-  }
-
+  /**
+   *  hexify() prints a byte array as a hex string.
+   */
   static void hexify(byte[] bytes)
   {
     char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
