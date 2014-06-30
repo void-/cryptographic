@@ -40,29 +40,6 @@ public class MainActivity extends Activity implements
     gv = (GridView) findViewById(R.id.grid_main);
     //enumerate keys should be safe even if no key was generated yet
     gv.setOnItemClickListener(this);
-
-    //test ciphers
-    //Key.getFetcher(getApplicationContext());
-    //test that decryption is encryption inverse
-    //Log.d(TAG, "Hello, World ?= " + new
-    //  String((Key.getStorer(getApplicationContext())).decrypt(
-    //  Fetcher.encrypt("Hello, World!".getBytes(),
-    //  (Key.getFetcher(getApplicationContext())).shareKey().getKey()))));
-
-    //for(int i = 0; i < 50; ++i)
-    //{
-    //  byte[] a = {(byte)i, (byte)(i+17), (byte)(i-2), (byte)i, (byte)(i+28), (byte)(i<<3), (byte)(i-5), (byte)(i&12)};
-    //  byte[] b = Base128.decode(Base128.encode(a));
-    //  ConversationActivity.hexify(a);
-    //  ConversationActivity.hexify(b);
-    //  for(int j = 0; j < a.length; ++j)
-    //  {
-    //    if(a[j] != b[j])
-    //    {
-    //      throw new IllegalStateException(i+","+j);
-    //    }
-    //  }
-    //}
   }
 
   /**
