@@ -2,6 +2,7 @@ Crytographic
 ===========
 Public key cryptography layered on sms communication
 Messaging is intended to be as seamless as possible
+Communication currently works on GSM phone
 
 Real Life Usage
 ==============
@@ -14,15 +15,15 @@ Technical details
 ================
 * Currently send single(not multipart) messages 122 bytes in plaintext length
 * Encrypted under 1064 bit(133 bytes) RSA with PKCS#1 padding exponent 65537
+* Base128 encoded ciphertext is viewable via native sms application
 
 Current Limitations
 ==================
-* Sending messages works on emulator but not real device
 * NFC completely untested
-* More than likely to fail on CDMA networks due to use of sendDataMessage()
 * No authentication or integrity is provided; only confidentiality
 * No perfect forward secrecy is guaranteed
 * All sent and received messages are stored unencrypted on the mobile device
+* Untested on CDMA phones
 
 Building
 =======
