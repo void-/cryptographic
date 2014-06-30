@@ -295,15 +295,16 @@ public class Storer
       Log.d(Storer.TAG, "Cannot decrypt; private key not generated.");
       return null;
     }
-    Log.d(TAG, "len:"+cipherText.length);
     try
     {
+      Log.d(TAG, "len:"+cipherText.length);
       return this.c.doFinal(cipherText);
     }
     catch(javax.crypto.IllegalBlockSizeException e)
     {Log.e(Storer.TAG, "exception", e); }
     catch(javax.crypto.BadPaddingException e)
     {Log.e(Storer.TAG, "Bad padding: Probably a plaintext.", e); }
+    catch(NullPointerException e) {Log.e(Storer.TAG, "null ciphertext", e);}
     return null; //could not decrypt
   }
 }

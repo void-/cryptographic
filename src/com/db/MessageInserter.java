@@ -6,6 +6,7 @@ import com.db.Names;
 import com.db.MessageDatabaseHelper;
 
 import com.key.Key;
+import com.key.Storer;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -14,6 +15,8 @@ import android.util.Log;
 import android.telephony.SmsMessage;
 import android.telephony.PhoneNumberUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 /**
  *  MessageInserter provides a writeonly database for storing incoming sms's.
  *
@@ -127,8 +130,17 @@ public class MessageInserter
   public void insertMessage(SmsMessage m)
   {
     //decrypt the sms body
+    Log.d(Names.TAG, m.getMessageBody());
+    Log.d(Names.TAG, "len:"+(m.getMessageBody()).length());
+
+    //only decode if its a proper length
+    //byte[] encryptedBody = (m.getMessageBody().length() == (Storer.KEYBITS>>3))
+    //  ? (Base128.decode(m.getMessageBody())) : null;
+    byte[] encryptedBody = (Base128.decode(m.getMessageBody()));
+    hexify(encryptedBody);
+
     byte[] decryptedBody =
-      (Key.getStorer(this.context)).decrypt(m.getUserData());
+      (Key.getStorer(this.context)).decrypt(encryptedBody);
     //check if decryption failed
     if(decryptedBody == null)
     {
@@ -202,5 +214,34 @@ public class MessageInserter
     {
       this.call.update();
     }
+  }
+
+  private static void hexify(byte[] bytes)
+  {
+    if(bytes == null)
+    {
+      return;
+    }
+    char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
+           'B', 'C', 'D', 'E', 'F' };
+    char[] hexChars = new char[bytes.length * 2];
+    int v;
+    for(int j = 0; j < bytes.length; j++)
+    {
+      v = bytes[j] & 0xFF;
+      hexChars[j * 2] = HEX_CHARS[v >>> 4];
+      hexChars[j * 2 + 1] = HEX_CHARS[v & 0x0F];
+    }
+    Log.d(Names.TAG, new String(hexChars));
+  }
+
+  /**
+   *  finalize() implemented because cursor needs to be closed. No caller will
+   *  close this MessageInserter because it is used with a singleton.
+   */
+  @Override
+  protected void finalize()
+  {
+    this.close();
   }
 }

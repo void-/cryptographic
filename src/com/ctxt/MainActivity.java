@@ -8,6 +8,8 @@ import com.key.Fetcher;
 import com.key.NumberKeyPair;
 import com.key.KeyAlreadyExistsException;
 
+import com.db.Base128;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.content.*;
@@ -38,14 +40,6 @@ public class MainActivity extends Activity implements
     gv = (GridView) findViewById(R.id.grid_main);
     //enumerate keys should be safe even if no key was generated yet
     gv.setOnItemClickListener(this);
-
-    //test ciphers
-    //Key.getFetcher(getApplicationContext());
-    //test that decryption is encryption inverse
-    //Log.d(TAG, "Hello, World ?= " + new
-    //  String((Key.getStorer(getApplicationContext())).decrypt(
-    //  Fetcher.encrypt("Hello, World!".getBytes(),
-    //  (Key.getFetcher(getApplicationContext())).shareKey().getKey()))));
   }
 
   /**

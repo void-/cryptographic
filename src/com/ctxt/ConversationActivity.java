@@ -7,6 +7,7 @@ import com.db.Inserter;
 import com.db.MessageInserter;
 import com.db.Message;
 import com.db.Updateable;
+import com.db.Base128;
 import com.key.Key;
 import com.key.Fetcher;
 
@@ -28,6 +29,7 @@ import android.widget.SimpleCursorAdapter;
 
 import android.util.Log;
 import android.telephony.SmsManager;
+import android.telephony.SmsMessage;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager; //For storing self public key
 
@@ -180,16 +182,44 @@ public class ConversationActivity extends Activity implements
   {
     String msg = (messageBox.getText()).toString();
 
-    m.sendDataMessage(PhoneNumberUtils.stripSeparators(recipient), null, PORT,
-      Fetcher.encrypt(msg.getBytes(),
-        ((Key.getFetcher(getApplicationContext())).fetchKey(recipient))
-        .getKey()),
+    byte[] cipherText = Fetcher.encrypt(msg.getBytes(),
+      ((Key.getFetcher(getApplicationContext())).fetchKey(recipient))
+        .getKey());
+
+    hexify(cipherText);
+
+    String encodedMsg = Base128.encode(cipherText);
+    Log.d(TAG, encodedMsg);
+    Log.d(TAG, "string len:" + encodedMsg.length());
+
+    //let the unicode string get converted back into binary blob
+    this.m.sendTextMessage(PhoneNumberUtils.stripSeparators(recipient), null,
+      encodedMsg,
       PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(SENT),
         Intent.FILL_IN_ACTION),
       PendingIntent.getBroadcast(getApplicationContext(), 0,
-        new Intent(RECEIVED), Intent.FILL_IN_ACTION));
+        new Intent(RECEIVED), Intent.FILL_IN_ACTION)
+    );
     writer.insertMessage(recipient, msg);
     //Clear the message box
     messageBox.setText("");
+  }
+
+  /**
+   *  hexify() prints a byte array as a hex string.
+   */
+  static void hexify(byte[] bytes)
+  {
+    char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
+           'B', 'C', 'D', 'E', 'F' };
+    char[] hexChars = new char[bytes.length * 2];
+    int v;
+    for(int j = 0; j < bytes.length; j++)
+    {
+      v = bytes[j] & 0xFF;
+      hexChars[j * 2] = HEX_CHARS[v >>> 4];
+      hexChars[j * 2 + 1] = HEX_CHARS[v & 0x0F];
+    }
+    Log.d(TAG, new String(hexChars));
   }
 }
