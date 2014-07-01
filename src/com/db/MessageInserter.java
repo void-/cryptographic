@@ -52,6 +52,7 @@ public class MessageInserter
   private Context context;
   private Updateable call;
   private String callNumber;
+  private static final int EXPECTED_LENGTH = (Storer.KEYBITS/7);
 
   /**
    *  MessageInserter() constructs a new MessageInserter purposed for inserting
@@ -134,9 +135,9 @@ public class MessageInserter
     Log.d(Names.TAG, "len:"+(m.getMessageBody()).length());
 
     //only decode if its a proper length
-    //byte[] encryptedBody = (m.getMessageBody().length() == (Storer.KEYBITS>>3))
-    //  ? (Base128.decode(m.getMessageBody())) : null;
-    byte[] encryptedBody = (Base128.decode(m.getMessageBody()));
+    byte[] encryptedBody = (m.getMessageBody().length() == (EXPECTED_LENGTH))
+      ? (Base128.decode(m.getMessageBody())) : null;
+    //byte[] encryptedBody = (Base128.decode(m.getMessageBody()));
     hexify(encryptedBody);
 
     byte[] decryptedBody =
