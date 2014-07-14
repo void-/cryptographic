@@ -132,11 +132,11 @@ public class KeyShare extends Activity implements
   public void onResume()
   {
     super.onResume();
-    Log.d("onResume called, action: "+getIntent().getAction());
+    Log.d(KeyShare.TAG, "onResume called, action: "+getIntent().getAction());
     if(nfcAdapter != null &&
         NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction()))
     {
-      Log.d("Processing intent in onResume().");
+      Log.d(KeyShare.TAG, "Processing intent in onResume().");
       processIntent(getIntent());
     }
   }
@@ -153,7 +153,7 @@ public class KeyShare extends Activity implements
   @Override
   public void onNdefPushComplete(NfcEvent event)
   {
-    Log.d("Pushed public key.");
+    Log.d(KeyShare.TAG, "Pushed public key.");
     //(Toast.makeText(getApplicationContext(), "key shared", Toast.LENGTH_SHORT)).show();
   }
 
@@ -167,7 +167,7 @@ public class KeyShare extends Activity implements
   @Override
   public void onNewIntent(Intent intent)
   {
-    Log.d("onNewIntent() called, New intent set.");
+    Log.d(KeyShare.TAG, "onNewIntent() called, New intent set.");
     setIntent(intent);
   }
 
@@ -183,12 +183,12 @@ public class KeyShare extends Activity implements
    */
   void processIntent(Intent intent)
   {
-    Log.d("processIntent called.");
+    Log.d(KeyShare.TAG, "processIntent called.");
     Parcelable[] rawMsgs =
       intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
     if(rawMsgs.length <= 0)
     {
-      Log.d("Aborting, rawMsgs too short.");
+      Log.d(KeyShare.TAG, "Aborting, rawMsgs too short.");
       return;
     }
     //Extract NdefMessage: process only 1 message; ignore all others
@@ -213,7 +213,7 @@ public class KeyShare extends Activity implements
     }
     catch(ClassNotFoundException e) {Log.e(KeyShare.TAG, "exception", e); }
     catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
-    Log.d("Launching fragment for key.");
+    Log.d(KeyShare.TAG, "Launching fragment for key.");
     textLog.append("Received key for number:" + pairInQuestion.getNumber());
     //launch a dialog to confirm addition of this public key
     ShareConfirmationDialogFragment f = new ShareConfirmationDialogFragment();
