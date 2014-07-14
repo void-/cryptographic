@@ -23,6 +23,7 @@
     android:layout_height="20dp"
     android:layout_below="@id/conversation"
     android:layout_alignParentBottom="true"
+    android:descendantFocusability="afterDescendants"
     >
 </FrameLayout>
 
