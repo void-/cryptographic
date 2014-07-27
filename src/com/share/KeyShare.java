@@ -169,7 +169,8 @@ public class KeyShare extends Activity implements
   {
     Log.d(KeyShare.TAG, "Pushed public key.");
     //(Toast.makeText(getApplicationContext(), "key shared", Toast.LENGTH_SHORT)).show();
-    textLog.append("Pushed public key.");
+    //textLog.append("Pushed public key.");
+    //Can't do this either because this is the binder thread changing ui
   }
 
   /**
