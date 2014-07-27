@@ -109,14 +109,18 @@ public class KeyShare extends Activity implements
     }
     catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
 
+    hexify(bin);
+
     //set the NFC message to share
     nfcAdapter.setNdefPushMessage(new NdefMessage(new NdefRecord[] {new
       NdefRecord(
       NdefRecord.TNF_MIME_MEDIA,
-      "object/com.key.NumberKeyPair".getBytes(
+      "application/com.ctxt".getBytes(
         Charset.forName("US-ASCII")),
       null,
-      bin)}), this);
+      bin)
+      , NdefRecord.createApplicationRecord("com.ctxt")
+      }), this);
 
     //register a callback for successful message transmission
     nfcAdapter.setOnNdefPushCompleteCallback(this, this);
@@ -132,13 +136,16 @@ public class KeyShare extends Activity implements
   public void onResume()
   {
     super.onResume();
-    Log.d(KeyShare.TAG, "onResume called, action: "+getIntent().getAction());
-    if(nfcAdapter != null &&
-        NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction()))
-    {
-      Log.d(KeyShare.TAG, "Processing intent in onResume().");
-      processIntent(getIntent());
-    }
+    Log.d(KeyShare.TAG, "Enabling forground dispatch");
+    nfcAdapter.enableForegroundDispatch(this, null, null, null);
+    //                                         ^ see if this crashes it
+  }
+
+  @Override
+  public void onPause()
+  {
+    super.onPause();
+    nfcAdapter.disableForegroundDispatch(this);
   }
 
   /**
@@ -155,6 +162,7 @@ public class KeyShare extends Activity implements
   {
     Log.d(KeyShare.TAG, "Pushed public key.");
     //(Toast.makeText(getApplicationContext(), "key shared", Toast.LENGTH_SHORT)).show();
+    textLog.append("Pushed public key.");
   }
 
   /**
@@ -167,8 +175,15 @@ public class KeyShare extends Activity implements
   @Override
   public void onNewIntent(Intent intent)
   {
-    Log.d(KeyShare.TAG, "onNewIntent() called, New intent set.");
-    setIntent(intent);
+    Log.d(KeyShare.TAG, "onNewIntent() called.");
+    //setIntent(intent);
+    Log.d(KeyShare.TAG, "onNewIntent called, action: "+intent);
+    if(nfcAdapter != null &&
+        NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent))
+    {
+      Log.d(KeyShare.TAG, "Processing intent in onNewIntent().");
+      processIntent(getIntent());
+    }
   }
 
   /**
@@ -257,5 +272,20 @@ public class KeyShare extends Activity implements
         pairInQuestion.getNumber() +
         "; you already have a public key for this number.");
     }
+  }
+
+  private static void hexify(byte[] bytes)
+  {
+    char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
+           'B', 'C', 'D', 'E', 'F' };
+    char[] hexChars = new char[bytes.length * 2];
+    int v;
+    for(int j = 0; j < bytes.length; j++)
+    {
+      v = bytes[j] & 0xFF;
+      hexChars[j * 2] = HEX_CHARS[v >>> 4];
+      hexChars[j * 2 + 1] = HEX_CHARS[v & 0x0F];
+    }
+    Log.d(TAG, new String(hexChars));
   }
 }
