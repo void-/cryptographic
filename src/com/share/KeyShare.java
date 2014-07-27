@@ -16,6 +16,8 @@ import android.content.Intent;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.app.PendingIntent;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.ObjectOutput;
@@ -137,8 +139,13 @@ public class KeyShare extends Activity implements
   {
     super.onResume();
     Log.d(KeyShare.TAG, "Enabling forground dispatch");
-    nfcAdapter.enableForegroundDispatch(this, null, null, null);
-    //                                         ^ see if this crashes it
+    //nfcAdapter.enableForegroundDispatch(this, null, null, null);
+    //                                           ^ see if this crashes it
+    nfcAdapter.enableForegroundDispatch(this,
+      PendingIntent.getBroadcast(getApplicationContext(), 0,
+      new Intent(NfcAdapter.ACTION_NDEF_DISCOVERED),
+      PendingIntent.FLAG_UPDATE_CURRENT)
+      , null, null);
   }
 
   @Override
