@@ -5,8 +5,9 @@
       android:versionName="0.0">
     <uses-sdk android:minSdkVersion="14" />
     <!--<uses-feature android:name="android.hardware.telephony" /> -->
-    <uses-feature android:name="android.hardware.nfc" />
-    <uses-permission android:name="android.permission.NFC"/>
+    <!--<uses-feature android:name="android.hardware.nfc" />
+    <uses-permission android:name="android.permission.NFC"/> -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
 
     <uses-permission android:name="android.permission.SEND_SMS"/>
@@ -44,11 +45,6 @@
 
         <activity android:name="com.share.KeyShare"
                   android:label="@string/share_name">
-            <intent-filter>
-                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="application/com.ctxt" />
-            </intent-filter>
             <meta-data android:name="android.support.PARENT_ACTIVITY"
                        android:value="com.ctxt.MainActivity" />
         </activity>
