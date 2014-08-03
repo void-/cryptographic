@@ -1,5 +1,6 @@
 package com.share;
 
+import com.share.Connection;
 import com.share.ShareConfirmationDialogFragment;
 import com.ctxt.R;
 
@@ -28,8 +29,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
 
+
+import android.bluetooth.BluetoothAdapter;
+import java.util.UUID;
+
 /**
- *  KeyShare Activity for sharing public keys via NFC.
+ *  KeyShare Activity for sharing public keys via Bluetooth.
+ *    DOCS DESCRIBE NFC ITERATION; UPDATE DOCS TO BLUETOOTH
  *
  *  When this Activity is launched, it will set a static payload to share via
  *  NFC(the user's phone number and public key). It should be the case that
@@ -38,9 +44,14 @@ import java.nio.charset.Charset;
  *
  *  If NFC is unavailable on the user's device, the KeyShare activity does
  *  nothing.
+ *
+ *  bluetooth process:
+ *    serialize the user's key
+ *    request the user make themselves discoverable by bluetooth in on resume
+ *    start listening AND display a dialog listing visible devices
+ *    accept a connection OR ask the user to pick a device
  */
 public class KeyShare extends Activity implements
-    NfcAdapter.OnNdefPushCompleteCallback,
     ShareConfirmationDialogFragment.ShareConfirmationListener
 {
   /**
@@ -50,6 +61,10 @@ public class KeyShare extends Activity implements
    *    originate from calls to KeyPair methods.
    */
   private static final String TAG = "KEYSHARE";
+  static final UUID BT_UUID =
+    UUID.fromString("885a4392-07a2-a613-0895-20a84ebaf087");
+  private static final int REQUEST_DISCOVERABLE = 0x1;
+
 
   /**
    *  Member Variables.
@@ -62,11 +77,14 @@ public class KeyShare extends Activity implements
    *  pairInQuestion NumberKeyPair that must be confirmed by the user before
    *    adding to Fetcher.
    */
-  private NfcAdapter nfcAdapter;
+  //private NfcAdapter nfcAdapter;
+  private BluetoothAdapter bluetoothAdapter;
   protected NumberKeyPair pairToShare;
   protected TextView textLog;
   private boolean numberConfirmed;
   private NumberKeyPair pairInQuestion;
+  private Connection connection;
+  private byte[] serializedKey;
 
   /**
    *  onCreate() registers NFC callbacks and sets the public key to share.
@@ -90,42 +108,33 @@ public class KeyShare extends Activity implements
     numberConfirmed = false;
     textLog = (TextView) findViewById(R.id.textView);
 
-    nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-    //NFC is unavailable
-    if(nfcAdapter == null)
+    bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    //bluetooth is unavailable
+    if(bluetoothAdapter == null)
     {
+      Log.d(TAG, "no bluetooth.");
+      textLog.append("bluetooth unsupported.");
+      finish();
       return;
     }
+
+    connection = new Connection(bluetoothAdapter);
+
     this.pairToShare = (Key.getFetcher(getApplicationContext())).shareKey();
     //serialize the NumberKeyPair to share
     ByteArrayOutputStream bo = new ByteArrayOutputStream();
     ObjectOutput out = null;
-    byte[] bin = null;
     try
     {
       out = new ObjectOutputStream(bo);
       out.writeObject(pairToShare);
-      bin = bo.toByteArray();
+      serializedKey = bo.toByteArray();
       out.close();
       bo.close();
     }
     catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
 
     hexify(bin);
-
-    //set the NFC message to share
-    nfcAdapter.setNdefPushMessage(new NdefMessage(new NdefRecord[] {new
-      NdefRecord(
-      NdefRecord.TNF_MIME_MEDIA,
-      "application/com.ctxt".getBytes(
-        Charset.forName("US-ASCII")),
-      null,
-      bin)
-      , NdefRecord.createApplicationRecord("com.ctxt")
-      }), this);
-
-    //register a callback for successful message transmission
-    nfcAdapter.setOnNdefPushCompleteCallback(this, this);
   }
 
   /**
@@ -138,59 +147,73 @@ public class KeyShare extends Activity implements
   public void onResume()
   {
     super.onResume();
-    Log.d(KeyShare.TAG, "Enabling forground dispatch");
-    //nfcAdapter.enableForegroundDispatch(this, null, null, null);
-    //                                           ^ see if this crashes it
-    nfcAdapter.enableForegroundDispatch(this,
-      PendingIntent.getBroadcast(getApplicationContext(), 0,
-      new Intent(NfcAdapter.ACTION_NDEF_DISCOVERED),
-      PendingIntent.FLAG_UPDATE_CURRENT)
-      , null, null);
+    makeDiscoverable();
   }
 
   @Override
   public void onPause()
   {
     super.onPause();
-    nfcAdapter.disableForegroundDispatch(this);
   }
 
   /**
-   *  onNdefPushComplete() is called upon successful NFC message transmission.
+   *  makeDiscoverable() launches an activity to ask the user to make the
+   *  device visible via bluetooth.
    *
-   *  This method currently does nothing because any toast made will be made on
-   *  the binder thread and be invisible to the ui.
-   *
-   *  Display a toast that the user's public key was shared.
-   *  @param event NfcEvent that has just occurred.
+   *  When done on both devices that would like to exchange keys, this makes it
+   *  able for either one to function as the server in the connection.
+   *  The user is the one that decides which device will be the client and
+   *  which the server.
    */
-  @Override
-  public void onNdefPushComplete(NfcEvent event)
+  private void makeDiscoverable()
   {
-    Log.d(KeyShare.TAG, "Pushed public key.");
-    //(Toast.makeText(getApplicationContext(), "key shared", Toast.LENGTH_SHORT)).show();
-    //textLog.append("Pushed public key.");
-    //Can't do this either because this is the binder thread changing ui
-  }
-
-  /**
-   *  onNewIntent() is called when this activity receives a new intent, when it
-   *  is, set it to be the current intent.
-   *  By calling setIntent(), onResume() will be called after.
-   *
-   *  @param intent Intent that should already filtered to for NDEF_DISCOVERED.
-   */
-  @Override
-  public void onNewIntent(Intent intent)
-  {
-    Log.d(KeyShare.TAG, "onNewIntent() called.");
-    //setIntent(intent);
-    Log.d(KeyShare.TAG, "onNewIntent called, action: "+intent);
-    if(nfcAdapter != null &&
-        NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent))
+    Log.d(TAG, "making discoverable");
+    if(bluetoothAdapter.getScanMode() !=
+        BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE)
     {
-      Log.d(KeyShare.TAG, "Processing intent in onNewIntent().");
-      processIntent(getIntent());
+      startActivityForResult(
+        new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE),
+        KeyShare.REQUEST_DISCOVERABLE);
+    }
+  }
+
+  /**
+   *  Ask the user to connect to a device and start listening for connections.
+   */
+  private void connectable()
+  {
+    //start listening for connections
+    connection.startListening();
+    //get the user to discover devices
+  }
+
+  /**
+   *  onActivityResult() callback for when a launched activity returns.
+   *
+   */
+  public void onActivityResult(int requestCode, int resultCode, Intent data)
+  {
+    Log.d(TAG, requestCode + ":activity returned:" + resultCode);
+    switch(requestCode)
+    {
+      case KeyShare.REQUEST_DISCOVERABLE:
+        if(resultCode == Activity.RESULT_OK) //device is now discoverable
+        {
+          Log.d(TAG, "device made discoverable");
+          if(bluetoothAdapter.startDiscovery())
+          {
+            Log.d(TAG, "attempting to discover devices...");
+            connectable();
+          }
+          else
+          {
+            Log.d(TAG, "failed to start discovering devices.");
+          }
+        }
+        else
+        {
+          Log.d(TAG, "setting device discovery failed");
+        }
     }
   }
 
