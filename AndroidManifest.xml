@@ -48,5 +48,11 @@
             <meta-data android:name="android.support.PARENT_ACTIVITY"
                        android:value="com.ctxt.MainActivity" />
         </activity>
+
+        <activity android:name="com.share.SelectDeviceActivity"
+                  android:label="@string/select_name">
+            <meta-data android:name="android.support.PARENT_ACTIVITY"
+                       android:value="com.ctxt.KeyShare" />
+        </activity>
     </application>
 </manifest>
