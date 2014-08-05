@@ -8,6 +8,8 @@
     <!--<uses-feature android:name="android.hardware.nfc" />
     <uses-permission android:name="android.permission.NFC"/> -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
+      <!--Need this for discovering other bluetooth devices-->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
 
     <uses-permission android:name="android.permission.SEND_SMS"/>
