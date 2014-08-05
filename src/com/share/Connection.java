@@ -77,6 +77,16 @@ class Connection
   }
 
   /**
+   *  getState returns the Connection's current state.
+   *
+   *  @return connecivity state.
+   */
+  synchronized int getState()
+  {
+    return this.state;
+  }
+
+  /**
    *  start listening as a bluetooth server.
    */
   synchronized void startListening()
@@ -95,7 +105,7 @@ class Connection
     }
     setState(Connection.STATE_LISTENING);
 
-    //start listening
+    //start listening if not already
     if(listenConnectionThread == null)
     {
       listenConnectionThread = new ListenThread();
@@ -123,6 +133,7 @@ class Connection
       connectionThread = null;
     }
 
+    //start making a connection
     makeConnectionThread = new MakeConnectionThread(d);
     makeConnectionThread.start();
     setState(Connection.STATE_CONNECTING);
@@ -161,6 +172,7 @@ class Connection
 
     Log.d(TAG, "connected() " + d);
 
+    //start a connection
     connectionThread = new ConnectionThread(socket, isServer);
     connectionThread.start();
     setState(Connection.STATE_CONNECTED);
@@ -174,7 +186,14 @@ class Connection
    */
   private class ListenThread extends Thread
   {
+
+    /**
+     *  Member Variables.
+     *
+     *  btSocket
+     */
     private final BluetoothServerSocket btSocket;
+
     ListenThread()
     {
       BluetoothServerSocket tmp = null;
@@ -190,6 +209,10 @@ class Connection
       btSocket = tmp;
     }
 
+    /**
+     *  listen as a bluetooth server, run until a client initates a connection.
+     *  Don't connect to more than one device.
+     */
     @Override
     public void run()
     {
@@ -198,11 +221,12 @@ class Connection
 
       BluetoothSocket socket = null;
 
-      while(state != Connection.STATE_CONNECTED)
+      while(state != Connection.STATE_CONNECTED && socket == null)
       {
         try
         {
           socket = btSocket.accept();
+          Log.d(TAG, "accept() stopped blocking");
         }
         catch(IOException e)
         {
@@ -213,6 +237,7 @@ class Connection
 
       if(socket == null) //no connection made
       {
+        Log.d(TAG, "no connection made after listening");
         return;
       }
 
@@ -227,6 +252,8 @@ class Connection
             break;
           case Connection.STATE_NONE:
           case Connection.STATE_CONNECTED:
+            //already connected, don't connect to any more devices
+            Log.d(TAG, "already connected: stopping connecting to device.");
             try
             {
               socket.close();
@@ -240,6 +267,9 @@ class Connection
       }
     }
 
+    /**
+     *  cancel() stop listening for a connection.
+     */
     public void cancel()
     {
       Log.d(TAG, "cancel listening " + this);
@@ -260,6 +290,12 @@ class Connection
    */
   private class MakeConnectionThread extends Thread
   {
+    /**
+     *  Member Variables.
+     *
+     *  socket BluetoothSocket to try to make a connection to(as the client).
+     *  device BluetoothDevice that acts as the server. Try to connect to this.
+     */
     private final BluetoothSocket socket;
     private final BluetoothDevice device;
 
@@ -278,6 +314,10 @@ class Connection
       socket = tmp;
     }
 
+    /**
+     *  run() try to connect to the bluetooth device.
+     *  connect() is a blocking call.
+     */
     @Override
     public void run()
     {
@@ -311,6 +351,9 @@ class Connection
       connected(socket, this.device, 0);
     }
 
+    /**
+     *  cancel() stop trying to initiate a connection.
+     */
     public void cancel()
     {
       try

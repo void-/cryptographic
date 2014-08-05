@@ -15,9 +15,20 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.os.Handler;
 import android.os.Message;
+import android.content.Context;
 import android.content.Intent;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ListView;
+
+import android.view.View;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import android.app.PendingIntent;
 
@@ -33,6 +44,7 @@ import java.nio.charset.Charset;
 import java.lang.System;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import java.util.UUID;
 
 /**
@@ -66,7 +78,7 @@ public class KeyShare extends Activity implements
   static final UUID BT_UUID =
     UUID.fromString("885a4392-07a2-a613-0895-20a84ebaf087");
   private static final int REQUEST_DISCOVERABLE = 0x1;
-  private static final int REQUEST_CONNECT = 0x2;
+  private static final int REQUEST_ENABLE = 0x2;
   static final int MESSAGE_KEY_RECEIVED = 0x10;
 
   /**
@@ -75,19 +87,18 @@ public class KeyShare extends Activity implements
    *  nfcAdapter NfcAdapter object used for interfacing with nfc communication.
    *  pairToShare NumberKeyPair containing the user's (phone number:public key)
    *    to share via nfc.
-   *  textLog TextView for informing the user which keys have been received or
-   *    were failed to be received.
    *  pairInQuestion NumberKeyPair that must be confirmed by the user before
    *    adding to Fetcher.
    */
   //private NfcAdapter nfcAdapter;
   private BluetoothAdapter bluetoothAdapter;
   protected NumberKeyPair pairToShare;
-  protected TextView textLog;
   private boolean numberConfirmed;
   private NumberKeyPair pairInQuestion;
   private Connection connection;
   private byte[] serializedKey;
+  private ArrayAdapter<String> deviceNamesAdapter;
+  private TextView status;
 
   /**
    *  onCreate() registers NFC callbacks and sets the public key to share.
@@ -109,53 +120,73 @@ public class KeyShare extends Activity implements
     setContentView(R.layout.keyshare);
 
     numberConfirmed = false;
-    textLog = (TextView) findViewById(R.id.textView);
 
     bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     //bluetooth is unavailable
     if(bluetoothAdapter == null)
     {
       Log.d(TAG, "no bluetooth.");
-      textLog.append("bluetooth unsupported.");
       finish();
       return;
     }
 
+    //set the device name
+    ((TextView) findViewById(R.id.device_name)).append(
+      bluetoothAdapter.getName());
+    ((TextView) findViewById(R.id.device_name)).append(
+      bluetoothAdapter.getAddress());
+    status = (TextView) findViewById(R.id.connection_status);
+
+    //register a receiver for discovering devices
+    registerReceiver(discoveredReceiver,
+      new IntentFilter(BluetoothDevice.ACTION_FOUND));
+
+    deviceNamesAdapter = new ArrayAdapter<String>(this,
+      android.R.layout.simple_list_item_1);
+    //setup the list view for displaying devices
+    ListView l = (ListView) findViewById(R.id.device_list);
+    l.setAdapter(deviceNamesAdapter);
+    l.setOnItemClickListener(deviceClickListener);
+
     this.pairToShare = (Key.getFetcher(getApplicationContext())).shareKey();
     //serialize the NumberKeyPair to share
-    ByteArrayOutputStream bo = new ByteArrayOutputStream();
-    ObjectOutput out = null;
-    try
-    {
-      out = new ObjectOutputStream(bo);
-      out.writeObject(pairToShare);
-      serializedKey = bo.toByteArray();
-      out.close();
-      bo.close();
-    }
-    catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
+    serializedKey = serializeKey(pairToShare);
 
     connection = new Connection(bluetoothAdapter, serializedKey, handler);
     hexify(serializedKey);
   }
 
   /**
-   *  onResume() checks if a new NFC intent is available to process.
-   *
-   *  If a new intent is available and its for an NDEF discovery, call
-   *  processIntent() on the intent.
+   *  onStart() ask the user if they would like to be discoverable.
+   *  Do this in onStart() to avoid an infinite dialog loop if the user
+   *  declines.
+   */
+  @Override
+  public void onStart()
+  {
+    super.onStart();
+    makeDiscoverable(null);
+  }
+
+  /**
+   *  onResume() start scanning for devices.
    */
   @Override
   public void onResume()
   {
     super.onResume();
-    makeDiscoverable();
+    onScan(null);
   }
 
+  /**
+   *  onPause()
+   */
   @Override
   public void onPause()
   {
     super.onPause();
+    Log.d(TAG, "onPause: canceling discovery");
+    bluetoothAdapter.cancelDiscovery();
   }
 
   /**
@@ -184,6 +215,69 @@ public class KeyShare extends Activity implements
   };
 
   /**
+   *  discoveredReceiver adds newly discovered bluetooth devices to the array
+   *  adapter.
+   */
+  private final BroadcastReceiver discoveredReceiver = new BroadcastReceiver()
+  {
+
+    /**
+     *  This should already be filtered for discovering a new bluetooth device.
+     */
+    @Override
+    public void onReceive(Context context, Intent intent)
+    {
+      BluetoothDevice device =
+        intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+      deviceNamesAdapter.add(device.getName() + "-" + device.getAddress());
+      Log.d(TAG, "found an new device:" + device.getName());
+    }
+  };
+
+  /**
+   *  deviceClickListener responds to clicks on devices listed in
+   *  deviceNamesAdapter.
+   *  
+   *  Give the bluetooth device back to the calling activity.
+   */
+  private OnItemClickListener deviceClickListener = new OnItemClickListener()
+  {
+
+    /**
+     *  onItemClick() callback when a bluetooth device is clicked.
+     *
+     *  stop looking for bluetooth devices and start connecting to the selected
+     *  one.
+     *
+     *  @param a the AdapterView where the click happened.
+     *  @param v the View that was clicked.
+     *  @param position index of v in a.
+     *  @param id the row id of v.
+     */
+    @Override
+    public void onItemClick(AdapterView<?> a, View v, int position, long id)
+    {
+      String nameAndMac = (((TextView) v).getText()).toString();
+      status.setText("connected to:" + nameAndMac);
+      connection.connectTo(bluetoothAdapter.getRemoteDevice(
+        nameAndMac.substring(nameAndMac.lastIndexOf('-')+1)));
+
+      bluetoothAdapter.cancelDiscovery();
+    }
+  };
+
+  /**
+   *  called when creating the action bar and options menu.
+   *  @return true.
+   */
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu)
+  {
+    getMenuInflater().inflate(R.layout.keyshare_menu, menu);
+    return true;
+  }
+
+  /**
    *  makeDiscoverable() launches an activity to ask the user to make the
    *  device visible via bluetooth.
    *
@@ -191,8 +285,10 @@ public class KeyShare extends Activity implements
    *  able for either one to function as the server in the connection.
    *  The user is the one that decides which device will be the client and
    *  which the server.
+   *
+   *  @param item not used, can be null.
    */
-  private void makeDiscoverable()
+  public void makeDiscoverable(MenuItem item)
   {
     Log.d(TAG, "making discoverable");
     if(bluetoothAdapter.getScanMode() !=
@@ -205,15 +301,32 @@ public class KeyShare extends Activity implements
   }
 
   /**
-   *  Ask the user to connect to a device and start listening for connections.
+   *  onScan() callback when scan button clicked. Start scanning for devices.
+   *
+   *  @param item not used, can be null.
    */
-  private void connectable()
+  public void onScan(MenuItem item)
+  {
+    Log.d(TAG, "starting discovery");
+    if(connection.getState() != Connection.STATE_CONNECTED)
+    {
+      bluetoothAdapter.startDiscovery();
+    }
+  }
+
+  /**
+   *  startListening() updates the ui and starts listening as a bluetooth
+   *  server.
+   */
+  private void startListening()
   {
     //start listening for connections
-    connection.startListening();
-    //get the user to discover devices
-    startActivityForResult(new Intent(this, SelectDeviceActivity.class),
-      REQUEST_CONNECT);
+    Log.d(TAG, "startListening() for bluetooth connections.");
+    if(connection.getState() != Connection.STATE_CONNECTED)
+    {
+      status.setText("listening");
+      connection.startListening();
+    }
   }
 
   /**
@@ -223,42 +336,31 @@ public class KeyShare extends Activity implements
   public void onActivityResult(int requestCode, int resultCode, Intent data)
   {
     Log.d(TAG, requestCode + ":activity returned:" + resultCode);
-    switch(requestCode)
+    if(requestCode == KeyShare.REQUEST_DISCOVERABLE)
     {
-      case KeyShare.REQUEST_DISCOVERABLE:
-        Log.d(TAG, "request discoverable returned");
-        if(resultCode > 0) //device is now discoverable
-        {
-          Log.d(TAG, "device made discoverable");
-          if(bluetoothAdapter.startDiscovery())
-          {
-            Log.d(TAG, "attempting to discover devices...");
-            connectable();
-          }
-          else
-          {
-            Log.d(TAG, "failed to start discovering devices.");
-          }
-        }
-        else
-        {
-          Log.d(TAG, "setting device discovery failed");
-        }
-      case KeyShare.REQUEST_CONNECT:
-        //the user selected a device and wants to be the client
-        Log.d(TAG, "request connect returned");
-        if(resultCode == Activity.RESULT_OK)
-        {
-          Log.d(TAG, "trying to connect to a device");
-          connection.connectTo(
-          bluetoothAdapter.getRemoteDevice(
-            (data.getExtras()).getString(SelectDeviceActivity.EXTRA_MAC)));
-        }
-        else
-        {
-          //don't do anything, the user might want to be the server
-          Log.d(TAG, "user did not select a device");
-        }
+      if(resultCode > 0)
+      {
+        Log.d(TAG, "device made discoverable, starting listening");
+        startListening();
+      }
+      else
+      {
+        Log.d(TAG, "user denied discoverability");
+        startActivityForResult(
+          new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE),
+          KeyShare.REQUEST_ENABLE);
+      }
+    }
+    else if(requestCode == KeyShare.REQUEST_ENABLE)
+    {
+      if(resultCode == Activity.RESULT_OK)
+      {
+        Log.d(TAG, "Bluetooth enabled by user, but not discoverable.");
+      }
+      else
+      {
+        Log.d(TAG, "user denied turning on bluetooth");
+      }
     }
   }
 
@@ -305,7 +407,7 @@ public class KeyShare extends Activity implements
     catch(ClassNotFoundException e) {Log.e(KeyShare.TAG, "exception", e); }
     catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
     Log.d(KeyShare.TAG, "Launching fragment for key.");
-    textLog.append("Received key for number:" + pairInQuestion.getNumber());
+    //textLog.append("Received key for number:" + pairInQuestion.getNumber());
     //launch a dialog to confirm addition of this public key
     ShareConfirmationDialogFragment f = new ShareConfirmationDialogFragment();
     Bundle bundle = new Bundle();
@@ -332,25 +434,10 @@ public class KeyShare extends Activity implements
   {
     Log.d(TAG, "called receiveKey");
     //Deserialize a NumberKeyPair from keyBuffer
-    ByteArrayInputStream b = new ByteArrayInputStream(keyBuffer, 0, len);
-    ObjectInput in = null;
-    try
-    {
-      in = new ObjectInputStream(b);
-    }
-    catch(java.io.StreamCorruptedException e)
-    {Log.e(KeyShare.TAG, "exception", e); }
-    catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
-    try
-    {
-      pairInQuestion = (NumberKeyPair) in.readObject();
-      b.close();
-      in.close();
-    }
-    catch(ClassNotFoundException e) {Log.e(KeyShare.TAG, "exception", e); }
-    catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
     Log.d(KeyShare.TAG, "Launching fragment for key.");
-    textLog.append("Received key for number:" + pairInQuestion.getNumber());
+    Log.d(TAG, "Received key for number:" + pairInQuestion.getNumber());
+
+    pairInQuestion = deserializeKey(keyBuffer, 0, len);
 
     //create a combined image of both keys
     byte[] img = new byte[len + serializedKey.length];
@@ -368,7 +455,6 @@ public class KeyShare extends Activity implements
     //launch a dialog to confirm addition of this public key
     ShareConfirmationDialogFragment f = new ShareConfirmationDialogFragment();
     Bundle bundle = new Bundle();
-    //TODO: change arguments to include image of server+client keys
     bundle.putString(ShareConfirmationDialogFragment.PHONE_NUMBER,
       pairInQuestion.getNumber());
     bundle.putByteArray(ShareConfirmationDialogFragment.IMAGE, img);
@@ -392,7 +478,7 @@ public class KeyShare extends Activity implements
     //user denied the number
     if(!confirmed)
     {
-      textLog.append("Rejected public key for number:" +
+      Log.d(TAG, "Rejected public key for number:" +
         pairInQuestion.getNumber());
       return;
     }
@@ -405,10 +491,82 @@ public class KeyShare extends Activity implements
     }
     catch(KeyAlreadyExistsException e)
     {
-      textLog.append("Could not add public key for number:" +
-        pairInQuestion.getNumber() +
-        "; you already have a public key for this number.");
+      Log.d(TAG, "Could not add public key for number:" +
+        pairInQuestion.getNumber()
+        + "; you already have a public key for this number.");
     }
+  }
+
+  /**
+   *  serializeKey() given a NumberKeyPair returns a byte array containing its
+   *  serialized representation.
+   *
+   *  @param p NumberKeyPair to serialize.
+   *  @return serialized NumberKeyPair p or null on error.
+   */
+  private static byte[] serializeKey(NumberKeyPair p)
+  {
+    ByteArrayOutputStream bo = new ByteArrayOutputStream();
+    ObjectOutput out = null;
+    try
+    {
+      out = new ObjectOutputStream(bo);
+      out.writeObject(p);
+      return bo.toByteArray();
+    }
+    catch(IOException e)
+    {
+      Log.e(KeyShare.TAG, "exception", e);
+    }
+    finally
+    {
+      try
+      {
+        out.close();
+        bo.close();
+      }
+      catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
+    }
+    return null; //if an exception is thrown
+  }
+
+  /**
+   *  deserializeKey() given a byte array containing the serialized
+   *  representation of a NumberKeyPair will return the original NumberKeyPair.
+   *
+   *  @param blob byte array to deserialize.
+   *  @param offset starting index into b.
+   *  @param len the number of bytes in b.
+   *  @return NumberKeyPair from deserializing b or null on error.
+   */
+  private static NumberKeyPair deserializeKey(byte[] blob, int offset, int len)
+  {
+    ByteArrayInputStream b = new ByteArrayInputStream(blob, offset, len);
+    ObjectInput in = null;
+    try
+    {
+      in = new ObjectInputStream(b);
+    }
+    catch(java.io.StreamCorruptedException e)
+    {Log.e(KeyShare.TAG, "exception", e); }
+    catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
+
+    try
+    {
+      return (NumberKeyPair) in.readObject();
+    }
+    catch(ClassNotFoundException e) {Log.e(KeyShare.TAG, "exception", e); }
+    catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
+    finally
+    {
+      try
+      {
+        b.close();
+        in.close();
+      }
+      catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
+    }
+    return null; //if an exception is thrown
   }
 
   private static void hexify(byte[] bytes)
