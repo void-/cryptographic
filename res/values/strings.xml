@@ -4,9 +4,10 @@
     <string name="share_name">KeyShare</string>
     <string name="conversation_name">Thread</string>
     <string name="select_name">Select</string>
-    <string name="KeyShare_display_text">Sharing your public key. Ensure NFC is
-      enabled.</string>
+    <string name="KeyShare_device_name">device:</string>
     <string name="button_share">share</string>
+    <string name="button_visible">reveal</string>
+    <string name="button_scan">scan</string>
     <string name="message_hint">encrypted sms</string>
     <string name="button_send">send</string>
     <string name="generate_button">generate</string>
@@ -15,5 +16,6 @@
     <string name="button_number_accept">accept</string>
     <string name="button_number_deny">deny</string>
     <string name="confirm_title">Ensure this phone number is correct</string>
+    <string name="connection">not connected</string>
     <string name="out_of_chars">/122</string>
 </resources>

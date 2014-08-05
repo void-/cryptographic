@@ -4,9 +4,18 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     >
-<TextView android:id="@+id/textView"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:text="@string/KeyShare_display_text"
+    <TextView android:id="@+id/device_name"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/KeyShare_device_name"
+        />
+    <TextView android:id="@+id/connection_status"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/connection"
+        />
+    <ListView android:id="@+id/device_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
     />
 </LinearLayout>
