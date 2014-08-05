@@ -24,14 +24,11 @@ import android.text.Editable;
 
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.BroadcastReceiver;
 import android.widget.SimpleCursorAdapter;
 
 import android.util.Log;
 import android.telephony.SmsManager;
-import android.telephony.SmsMessage;
 import android.telephony.PhoneNumberUtils;
-import android.telephony.TelephonyManager; //For storing self public key
 
 import android.app.PendingIntent;
 
@@ -65,21 +62,9 @@ public class ConversationActivity extends Activity implements
   private String recipient;
   private MessageReader reader;
   private MessageInserter writer;
-  private TextView messages;
   private SimpleCursorAdapter adapter;
   private EditText messageBox;
   private TextView charsLeft;
-
-  private BroadcastReceiver thisSMSreceiver = new BroadcastReceiver()
-    {
-      @Override
-      public void onReceive(Context context, Intent intent)
-      {
-        Log.d(TAG, "nested onReceive() called.");
-        Log.d(TAG, "intent action:"+intent.getAction());
-        Log.d(TAG, "result code:"+getResultCode());
-      }
-    };
 
   /**
    *  onCreate() called when first created.
@@ -114,8 +99,6 @@ public class ConversationActivity extends Activity implements
     no.setText(recipient);
     Button send = (Button) findViewById(R.id.send);
     send.setOnClickListener(this);
-    //messages = (TextView) findViewById(R.id.messages);
-    //populateConversation();
     ListView listView = (ListView) findViewById(R.id.messages);
     this.adapter = reader.getAdapter(this, recipient);
     listView.setAdapter(adapter);
@@ -126,7 +109,6 @@ public class ConversationActivity extends Activity implements
     IntentFilter SMSintentFilter = new IntentFilter();
     SMSintentFilter.addAction(SENT);
     SMSintentFilter.addAction(RECEIVED);
-    registerReceiver(thisSMSreceiver, SMSintentFilter);
   }
 
   @Override
@@ -136,42 +118,13 @@ public class ConversationActivity extends Activity implements
     //writer.close();
     writer.unregisterNotification();
     reader.close();
-    unregisterReceiver(thisSMSreceiver);
   }
-
-  /**
-   *  ConversationSMSreceiver() extends SMSreceiver to provide additional
-   *  functionality for updating the activity it is running in.
-   */
-  //private class ConversationSMSreceiver extends SMSreceiver
-  //{
-  //  /**
-  //   *  only notify the activity that the conversation should be updated.
-  //   */
-  //  @Override
-  //  public void onReceive(Context context, Intent intent)
-  //  {
-  //    //everything should already be in the database, update the activity
-  //    ConversationActivity.this.updateConversation();
-  //  }
-  //}
 
   public void update()
   {
     Log.d(TAG, "updateConversation() called.");
     //do a check to make sure that the number is the same
     reader.updateAdapter(adapter, recipient);
-  }
-
-  /**
-   *  populateConversation() writes the entire conversation to a text view.
-   */
-  private void populateConversation()
-  {
-    for(Message m: reader.getConversationIterator(recipient))
-    {
-      messages.append(m.message);
-    }
   }
 
   /**
@@ -185,8 +138,6 @@ public class ConversationActivity extends Activity implements
     byte[] cipherText = Fetcher.encrypt(msg.getBytes(),
       ((Key.getFetcher(getApplicationContext())).fetchKey(recipient))
         .getKey());
-
-    hexify(cipherText);
 
     String encodedMsg = Base128.encode(cipherText);
     Log.d(TAG, encodedMsg);
@@ -203,23 +154,5 @@ public class ConversationActivity extends Activity implements
     writer.insertMessage(recipient, msg);
     //Clear the message box
     messageBox.setText("");
-  }
-
-  /**
-   *  hexify() prints a byte array as a hex string.
-   */
-  static void hexify(byte[] bytes)
-  {
-    char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
-           'B', 'C', 'D', 'E', 'F' };
-    char[] hexChars = new char[bytes.length * 2];
-    int v;
-    for(int j = 0; j < bytes.length; j++)
-    {
-      v = bytes[j] & 0xFF;
-      hexChars[j * 2] = HEX_CHARS[v >>> 4];
-      hexChars[j * 2 + 1] = HEX_CHARS[v & 0x0F];
-    }
-    Log.d(TAG, new String(hexChars));
   }
 }
