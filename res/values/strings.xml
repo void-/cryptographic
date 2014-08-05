@@ -3,6 +3,7 @@
     <string name="app_name">cryptographic</string>
     <string name="share_name">KeyShare</string>
     <string name="conversation_name">Thread</string>
+    <string name="select_name">Select</string>
     <string name="KeyShare_display_text">Sharing your public key. Ensure NFC is
       enabled.</string>
     <string name="button_share">share</string>
