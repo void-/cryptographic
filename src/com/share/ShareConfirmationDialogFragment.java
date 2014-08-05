@@ -22,8 +22,15 @@ import android.telephony.TelephonyManager;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.PhoneNumberFormattingTextWatcher;
 
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.BitmapFactory;
+
 /**
  *  ShareConfirmationDialogFragment manages dialog creation for key generation.
+ *
+ *  TODO: put an image in here representing the user's key and the new key.
+ *    make a blob out of both keys and use it as an RGB image
  */
 public class ShareConfirmationDialogFragment extends DialogFragment
 {
@@ -35,10 +42,12 @@ public class ShareConfirmationDialogFragment extends DialogFragment
    *    originate from calls to this class's methods.
    *  PHONE_NUMBER static identifier to identify the phone number argument
    *    passed when creating a ShareConfirmationDialogFragment.
+   *  IMAGE static identifier to identify an image bytearray passed via bundle.
    */
   static final String FRAG_TAG = "com.share.confirmFragment";
   static final String TAG = "SHARE_CONFIRM";
   static String PHONE_NUMBER = "com.share.phoneNumber";
+  static String IMAGE = "com.share.image";
 
   /**
    *  Member Variables.
@@ -47,9 +56,11 @@ public class ShareConfirmationDialogFragment extends DialogFragment
    *    displayed in the created dialog.
    *  buttonListener ShareConfirmationListener to callback when a button is
    *    pressed.
+   *  keyIcon Drawable object to display as the dialog's icon.
    */
   private String number;
   private ShareConfirmationListener buttonListener;
+  private Drawable keyIcon;
 
   /**
    *  onCreate() is called when instantiating a new
@@ -60,14 +71,27 @@ public class ShareConfirmationDialogFragment extends DialogFragment
    *  created by this fragment. The phone number needs to be associated with
    *  the key, ShareConfirmationDialogFragment.PHONE_NUMBER.
    *
+   *  set arguments for IMAGE too.
+   *
+   *  To authenticate the connection, a byte array representing the server and
+   *  client's serialized NumberKeyPairs is needed. This byte array is
+   *  converted into a bitmap which is displayed to the user.
+   *
+   *  Both users need to compare the icons on each of their devices to ensure
+   *  that they did indeed communicate with each other.
+   *
    *  @param savedInstanceState Bundle with any data from a previous instance.
    */
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
-    this.number =
-      getArguments().getString(ShareConfirmationDialogFragment.PHONE_NUMBER);
+    Bundle args = getArguments();
+    this.number = args.getString(ShareConfirmationDialogFragment.PHONE_NUMBER);
+    byte[] img = args.getByteArray(ShareConfirmationDialogFragment.IMAGE);
+    //turn img into a useable bitmap
+    keyIcon = new BitmapDrawable(getResources(),
+      BitmapFactory.decodeByteArray(img, 0, img.length));
   }
 
   /**
@@ -82,6 +106,7 @@ public class ShareConfirmationDialogFragment extends DialogFragment
 
     builder.setTitle(R.string.confirm_title);
     builder.setMessage(number);
+    builder.setIcon(keyIcon);
     builder.setPositiveButton(R.string.button_number_accept,
       new DialogInterface.OnClickListener()
       {

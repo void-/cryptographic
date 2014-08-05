@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothDevice;
+import android.os.Handler;
 import android.util.Log;
 
 import java.io.InputStream;
@@ -14,6 +15,12 @@ import java.io.IOException;
 
 /**
  *  Manage a bluetooth connection as a server or a client.
+ *
+ *  Use an insecure Rfcomm connection for the following reasons:
+ *    stay compatable with more devices that have worse bluetooth hardware
+ *    don't bug the user with yet another confirmation dialog
+ *    better(more entropic) authentication will be done on the phone number and
+ *      keys anyways, no need to do it twice
  */
 class Connection
 {
@@ -43,14 +50,21 @@ class Connection
   private ListenThread listenConnectionThread;
   private ConnectionThread connectionThread;
   private int state;
+  private byte[] serializedKey;
+  private Handler handler;
 
-  Connection(BluetoothAdapter bluetoothAdapter)
+  /**
+   *  Connection() construct a new Construction instance.
+   */
+  Connection(BluetoothAdapter bluetoothAdapter, byte[] key, Handler handler)
   {
     this.bluetoothAdapter = bluetoothAdapter;
     state = Connection.STATE_NONE;
     makeConnectionThread = null;
     listenConnectionThread = null;
     connectionThread = null;
+    this.serializedKey = key;
+    this.handler = handler;
   }
 
   /**
@@ -94,6 +108,7 @@ class Connection
    */
   synchronized void connectTo(BluetoothDevice d)
   {
+    Log.d(TAG, "Connecting to device:"+d.getAddress());
     //stop trying to connect
     if(state == Connection.STATE_CONNECTING && makeConnectionThread != null)
     {
@@ -115,8 +130,13 @@ class Connection
 
   /**
    *  given a socket and bluetoothDevice, begin a bluetooth connection
+   *
+   *  @param socket
+   *  @param d
+   *  @param isServer boolean indicating whether this device acts as server.
    */
-  synchronized void connected(BluetoothSocket socket, BluetoothDevice d)
+  synchronized void connected(BluetoothSocket socket, BluetoothDevice d,
+      int isServer)
   {
     //stop trying to make a connection
     if(makeConnectionThread != null)
@@ -141,9 +161,11 @@ class Connection
 
     Log.d(TAG, "connected() " + d);
 
-    connectionThread = new ConnectionThread(socket);
+    connectionThread = new ConnectionThread(socket, isServer);
     connectionThread.start();
     setState(Connection.STATE_CONNECTED);
+    //send key to the other device
+    connectionThread.write(this.serializedKey);
   }
 
   /**
@@ -158,7 +180,7 @@ class Connection
       BluetoothServerSocket tmp = null;
       try
       {
-        tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord(
+        tmp = bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord(
           Connection.NAME, KeyShare.BT_UUID);
       }
       catch(IOException e)
@@ -200,7 +222,8 @@ class Connection
         {
           case Connection.STATE_LISTENING:
           case Connection.STATE_CONNECTING:
-            connected(socket, socket.getRemoteDevice());
+            //act as the server in the connection
+            connected(socket, socket.getRemoteDevice(), 1);
             break;
           case Connection.STATE_NONE:
           case Connection.STATE_CONNECTED:
@@ -246,7 +269,7 @@ class Connection
       BluetoothSocket tmp = null;
       try
       {
-        tmp = d.createRfcommSocketToServiceRecord(KeyShare.BT_UUID);
+        tmp = d.createInsecureRfcommSocketToServiceRecord(KeyShare.BT_UUID);
       }
       catch(IOException e)
       {
@@ -284,7 +307,8 @@ class Connection
         makeConnectionThread = null;
       }
 
-      connected(socket, this.device);
+      //act as the client in the connection
+      connected(socket, this.device, 0);
     }
 
     public void cancel()
@@ -308,14 +332,22 @@ class Connection
    */
   private class ConnectionThread extends Thread
   {
+    /**
+     *  Member Variables.
+     */
     private final BluetoothSocket socket;
     private final InputStream in;
     private final OutputStream out;
+    private final int isServer;
 
-    ConnectionThread(BluetoothSocket socket)
+    /**
+     *  ConnectionThread constructor
+     */
+    ConnectionThread(BluetoothSocket socket, int isServer)
     {
       Log.d(TAG, "create connection");
       this.socket = socket;
+      this.isServer = isServer;
       InputStream tmpIn = null;
       OutputStream tmpOut = null;
       try
@@ -330,17 +362,22 @@ class Connection
       in = tmpIn;
       out = tmpOut;
     }
+
     @Override
     public void run()
     {
       Log.d(TAG, "starting a connection");
       byte[] buffer = new byte[2048];
+      int bytes = 0;
       while(true)
       {
         try
         {
-          in.read(buffer);
-          //do something with buffer
+          //give buffer to KeyShare
+          Log.d(TAG, "trying to read data...");
+          (handler.obtainMessage(KeyShare.MESSAGE_KEY_RECEIVED,
+            in.read(buffer), this.isServer, buffer)).sendToTarget();
+          Log.d(TAG, "sent a message to handler");
         }
         catch(IOException e)
         {
@@ -352,6 +389,7 @@ class Connection
 
     public void write(byte[] buffer)
     {
+      Log.d(TAG, "writing a buffer to send");
       try
       {
         out.write(buffer);

@@ -13,6 +13,8 @@ import android.nfc.*;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.os.Handler;
+import android.os.Message;
 import android.content.Intent;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,7 +30,7 @@ import java.io.ObjectInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
-
+import java.lang.System;
 
 import android.bluetooth.BluetoothAdapter;
 import java.util.UUID;
@@ -64,7 +66,8 @@ public class KeyShare extends Activity implements
   static final UUID BT_UUID =
     UUID.fromString("885a4392-07a2-a613-0895-20a84ebaf087");
   private static final int REQUEST_DISCOVERABLE = 0x1;
-
+  private static final int REQUEST_CONNECT = 0x2;
+  static final int MESSAGE_KEY_RECEIVED = 0x10;
 
   /**
    *  Member Variables.
@@ -118,8 +121,6 @@ public class KeyShare extends Activity implements
       return;
     }
 
-    connection = new Connection(bluetoothAdapter);
-
     this.pairToShare = (Key.getFetcher(getApplicationContext())).shareKey();
     //serialize the NumberKeyPair to share
     ByteArrayOutputStream bo = new ByteArrayOutputStream();
@@ -134,7 +135,8 @@ public class KeyShare extends Activity implements
     }
     catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
 
-    hexify(bin);
+    connection = new Connection(bluetoothAdapter, serializedKey, handler);
+    hexify(serializedKey);
   }
 
   /**
@@ -155,6 +157,31 @@ public class KeyShare extends Activity implements
   {
     super.onPause();
   }
+
+  /**
+   *  handler Handler allows for communication from a Connection instance to
+   *  the KeyShare activity.
+   */
+  private final Handler handler = new Handler()
+  {
+
+    /**
+     *  handleMessage() callback.
+     *
+     *  m Message to pass over.
+     */
+    @Override
+    public void handleMessage(Message m)
+    {
+      Log.d(TAG, "handleMessage() called, what:" + m.what);
+      switch(m.what)
+      {
+        case KeyShare.MESSAGE_KEY_RECEIVED:
+          Log.d(TAG, "MESSAGE_KEY_RECEIVED");
+          receiveKey((byte[]) m.obj, m.arg1, m.arg2);
+      }
+    }
+  };
 
   /**
    *  makeDiscoverable() launches an activity to ask the user to make the
@@ -185,6 +212,8 @@ public class KeyShare extends Activity implements
     //start listening for connections
     connection.startListening();
     //get the user to discover devices
+    startActivityForResult(new Intent(this, SelectDeviceActivity.class),
+      REQUEST_CONNECT);
   }
 
   /**
@@ -197,7 +226,8 @@ public class KeyShare extends Activity implements
     switch(requestCode)
     {
       case KeyShare.REQUEST_DISCOVERABLE:
-        if(resultCode == Activity.RESULT_OK) //device is now discoverable
+        Log.d(TAG, "request discoverable returned");
+        if(resultCode > 0) //device is now discoverable
         {
           Log.d(TAG, "device made discoverable");
           if(bluetoothAdapter.startDiscovery())
@@ -213,6 +243,21 @@ public class KeyShare extends Activity implements
         else
         {
           Log.d(TAG, "setting device discovery failed");
+        }
+      case KeyShare.REQUEST_CONNECT:
+        //the user selected a device and wants to be the client
+        Log.d(TAG, "request connect returned");
+        if(resultCode == Activity.RESULT_OK)
+        {
+          Log.d(TAG, "trying to connect to a device");
+          connection.connectTo(
+          bluetoothAdapter.getRemoteDevice(
+            (data.getExtras()).getString(SelectDeviceActivity.EXTRA_MAC)));
+        }
+        else
+        {
+          //don't do anything, the user might want to be the server
+          Log.d(TAG, "user did not select a device");
         }
     }
   }
@@ -266,6 +311,67 @@ public class KeyShare extends Activity implements
     Bundle bundle = new Bundle();
     bundle.putString(ShareConfirmationDialogFragment.PHONE_NUMBER,
       pairInQuestion.getNumber());
+    f.setArguments(bundle);
+    f.show(getFragmentManager(), ShareConfirmationDialogFragment.FRAG_TAG);
+  }
+
+  /**
+   *  receiveKey() called when a key is received via bluetooth.
+   *
+   *  Ask the user if the key is ok, then proceed to add it.
+   *  Create an image for authentication.
+   *  image : Server key || Client Key
+   *
+   *  @param keyBuffer byte array representing a serialized
+   *    NumberKeyPair.
+   *  @param len integer representing how many bytes in keyBuffer are used.
+   *  @param isServer boolean indicating whether this device acted as the
+   *    server in the bluetooth connection
+   */
+  void receiveKey(byte[] keyBuffer, int len, int isServer)
+  {
+    Log.d(TAG, "called receiveKey");
+    //Deserialize a NumberKeyPair from keyBuffer
+    ByteArrayInputStream b = new ByteArrayInputStream(keyBuffer, 0, len);
+    ObjectInput in = null;
+    try
+    {
+      in = new ObjectInputStream(b);
+    }
+    catch(java.io.StreamCorruptedException e)
+    {Log.e(KeyShare.TAG, "exception", e); }
+    catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
+    try
+    {
+      pairInQuestion = (NumberKeyPair) in.readObject();
+      b.close();
+      in.close();
+    }
+    catch(ClassNotFoundException e) {Log.e(KeyShare.TAG, "exception", e); }
+    catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
+    Log.d(KeyShare.TAG, "Launching fragment for key.");
+    textLog.append("Received key for number:" + pairInQuestion.getNumber());
+
+    //create a combined image of both keys
+    byte[] img = new byte[len + serializedKey.length];
+    if(isServer > 0) //user was the server
+    {
+      System.arraycopy(serializedKey, 0, img, 0, serializedKey.length);
+      System.arraycopy(keyBuffer, 0, img, serializedKey.length, len);
+    }
+    else
+    {
+      System.arraycopy(keyBuffer, 0, img, 0, len);
+      System.arraycopy(serializedKey, 0, img, len, serializedKey.length);
+    }
+
+    //launch a dialog to confirm addition of this public key
+    ShareConfirmationDialogFragment f = new ShareConfirmationDialogFragment();
+    Bundle bundle = new Bundle();
+    //TODO: change arguments to include image of server+client keys
+    bundle.putString(ShareConfirmationDialogFragment.PHONE_NUMBER,
+      pairInQuestion.getNumber());
+    bundle.putByteArray(ShareConfirmationDialogFragment.IMAGE, img);
     f.setArguments(bundle);
     f.show(getFragmentManager(), ShareConfirmationDialogFragment.FRAG_TAG);
   }
