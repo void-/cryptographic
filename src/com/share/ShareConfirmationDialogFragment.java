@@ -23,8 +23,10 @@ import android.telephony.PhoneNumberUtils;
 import android.telephony.PhoneNumberFormattingTextWatcher;
 
 import android.graphics.drawable.Drawable;
+import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.BitmapFactory;
+import android.graphics.Shader.TileMode;
 
 /**
  *  ShareConfirmationDialogFragment manages dialog creation for key generation.
@@ -43,11 +45,17 @@ public class ShareConfirmationDialogFragment extends DialogFragment
    *  PHONE_NUMBER static identifier to identify the phone number argument
    *    passed when creating a ShareConfirmationDialogFragment.
    *  IMAGE static identifier to identify an image bytearray passed via bundle.
+   *  WIDTH constant authentication image width.
+   *  HEIGHT constant authentication image height: adjust per algorithm, key
+   *    size, and serialized representation of NumberKeyPair.
    */
   static final String FRAG_TAG = "com.share.confirmFragment";
   static final String TAG = "SHARE_CONFIRM";
   static String PHONE_NUMBER = "com.share.phoneNumber";
   static String IMAGE = "com.share.image";
+  //(296) * 2 = 592 = 4 * (4 * 37)
+  private static final byte WIDTH = 4;
+  private static final byte HEIGHT = 37;
 
   /**
    *  Member Variables.
@@ -60,7 +68,7 @@ public class ShareConfirmationDialogFragment extends DialogFragment
    */
   private String number;
   private ShareConfirmationListener buttonListener;
-  private Drawable keyIcon;
+  private BitmapDrawable keyIcon;
 
   /**
    *  onCreate() is called when instantiating a new
@@ -88,10 +96,15 @@ public class ShareConfirmationDialogFragment extends DialogFragment
     super.onCreate(savedInstanceState);
     Bundle args = getArguments();
     this.number = args.getString(ShareConfirmationDialogFragment.PHONE_NUMBER);
-    byte[] img = args.getByteArray(ShareConfirmationDialogFragment.IMAGE);
+    //byte[] img = args.getByteArray(ShareConfirmationDialogFragment.IMAGE);
     //turn img into a useable bitmap
-    keyIcon = new BitmapDrawable(getResources(),
-      BitmapFactory.decodeByteArray(img, 0, img.length));
+    keyIcon =
+      generateImage(args.getByteArray(ShareConfirmationDialogFragment.IMAGE));
+    keyIcon.setBounds(0, 0, 50, 50); //50x50 icon
+    keyIcon.setTileModeXY(TileMode.REPEAT, TileMode.REPEAT);
+    Log.d(TAG, "keyIcon:" + keyIcon);
+    //keyIcon = new BitmapDrawable(getResources(),
+    //  BitmapFactory.decodeByteArray(img, 0, img.length));
   }
 
   /**
@@ -146,6 +159,23 @@ public class ShareConfirmationDialogFragment extends DialogFragment
   {
     super.onAttach(activity);
     this.buttonListener = (ShareConfirmationListener) activity;
+  }
+
+  /**
+   *  generateImage() given a blob will generate a Drawable object uniquely
+   *  representing it.
+   *
+   *  @param blob byte array representing the data to uniquely display.
+   *  @return Drawable representing server and client.
+   */
+  protected BitmapDrawable generateImage(byte[] blob)
+  {
+    //return new BitmapDrawable(getResources(),
+    //  BitmapFactory.decodeByteArray(blob, 0, blob.length&0xfffffffc));
+
+      Bitmap b = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888);
+      b.copyPixelsFromBuffer(java.nio.ByteBuffer.wrap(blob));
+      return new BitmapDrawable(getResources(), b);
   }
 
   /**

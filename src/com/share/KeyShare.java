@@ -79,6 +79,8 @@ public class KeyShare extends Activity implements
     UUID.fromString("885a4392-07a2-a613-0895-20a84ebaf087");
   private static final int REQUEST_DISCOVERABLE = 0x1;
   private static final int REQUEST_ENABLE = 0x2;
+  private static final int KEY_ADDED = 0x3;
+  private static final int KEY_REJECTED = 0x4;
   static final int MESSAGE_KEY_RECEIVED = 0x10;
 
   /**
@@ -210,6 +212,14 @@ public class KeyShare extends Activity implements
         case KeyShare.MESSAGE_KEY_RECEIVED:
           Log.d(TAG, "MESSAGE_KEY_RECEIVED");
           receiveKey((byte[]) m.obj, m.arg1, m.arg2);
+        case KeyShare.KEY_ADDED:
+          Log.d(TAG, "handling key added");
+          Toast.makeText(getApplicationContext(), "Key added!",
+            Toast.LENGTH_LONG).show();
+        case KeyShare.KEY_REJECTED:
+          Log.d(TAG, "handling key rejected");
+          Toast.makeText(getApplicationContext(), "key rejected",
+            Toast.LENGTH_LONG).show();
       }
     }
   };
@@ -482,6 +492,7 @@ public class KeyShare extends Activity implements
     {
       Log.d(TAG, "Rejected public key for number:" +
         pairInQuestion.getNumber());
+      handler.obtainMessage(KEY_REJECTED).sendToTarget();
       return;
     }
     //try to add the key
@@ -490,6 +501,7 @@ public class KeyShare extends Activity implements
       (Key.getFetcher(getApplicationContext())).newKey(
         pairInQuestion.getNumber(),
         pairInQuestion.getKey());
+      handler.obtainMessage(KEY_ADDED).sendToTarget();
     }
     catch(KeyAlreadyExistsException e)
     {

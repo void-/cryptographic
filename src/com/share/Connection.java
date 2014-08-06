@@ -411,7 +411,7 @@ class Connection
     public void run()
     {
       Log.d(TAG, "starting a connection");
-      byte[] buffer = new byte[2048];
+      byte[] buffer = new byte[1024];
       int bytes = 0;
       while(true)
       {
