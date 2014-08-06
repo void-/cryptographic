@@ -212,14 +212,17 @@ public class KeyShare extends Activity implements
         case KeyShare.MESSAGE_KEY_RECEIVED:
           Log.d(TAG, "MESSAGE_KEY_RECEIVED");
           receiveKey((byte[]) m.obj, m.arg1, m.arg2);
+          break;
         case KeyShare.KEY_ADDED:
           Log.d(TAG, "handling key added");
           Toast.makeText(getApplicationContext(), "Key added!",
             Toast.LENGTH_LONG).show();
+          break;
         case KeyShare.KEY_REJECTED:
           Log.d(TAG, "handling key rejected");
           Toast.makeText(getApplicationContext(), "key rejected",
             Toast.LENGTH_LONG).show();
+          break;
       }
     }
   };
