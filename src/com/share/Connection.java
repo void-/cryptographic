@@ -225,6 +225,7 @@ class Connection
       {
         try
         {
+          Log.d(TAG, "waiting for accept");
           socket = btSocket.accept();
           Log.d(TAG, "accept() stopped blocking");
         }

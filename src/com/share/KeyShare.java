@@ -434,25 +434,27 @@ public class KeyShare extends Activity implements
   {
     Log.d(TAG, "called receiveKey");
     //Deserialize a NumberKeyPair from keyBuffer
-    Log.d(KeyShare.TAG, "Launching fragment for key.");
-    Log.d(TAG, "Received key for number:" + pairInQuestion.getNumber());
-
+    Log.d(TAG, "deserializing key...");
     pairInQuestion = deserializeKey(keyBuffer, 0, len);
+    Log.d(TAG, "Received key for number:" + pairInQuestion.getNumber());
 
     //create a combined image of both keys
     byte[] img = new byte[len + serializedKey.length];
     if(isServer > 0) //user was the server
     {
+      Log.d(TAG, "server memcpy");
       System.arraycopy(serializedKey, 0, img, 0, serializedKey.length);
       System.arraycopy(keyBuffer, 0, img, serializedKey.length, len);
     }
     else
     {
+      Log.d(TAG, "client memcpy");
       System.arraycopy(keyBuffer, 0, img, 0, len);
       System.arraycopy(serializedKey, 0, img, len, serializedKey.length);
     }
 
     //launch a dialog to confirm addition of this public key
+    Log.d(KeyShare.TAG, "Launching fragment for key.");
     ShareConfirmationDialogFragment f = new ShareConfirmationDialogFragment();
     Bundle bundle = new Bundle();
     bundle.putString(ShareConfirmationDialogFragment.PHONE_NUMBER,
