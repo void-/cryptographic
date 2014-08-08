@@ -26,6 +26,14 @@ class Connection
 {
   /**
    *  Class Variables.
+   *
+   *  TAG
+   *  NAME
+   *  STATE_NONE
+   *  STATE_LISTENING
+   *  STATE_CONNECTING
+   *  STATE_CONNECTED
+   *  SERIALIZED_SIZE
    */
   private static final String TAG = "Connection";
   private static final String NAME = "KeyShare";
@@ -45,6 +53,8 @@ class Connection
    *  connectionThread ConnectThread for maintaining a connection as either a
    *    client or a server.
    *  state int represeting the current state of Connection.
+   *  serializedKey
+   *  handler Handler for communicating with the instantiater of this.
    */
   private BluetoothAdapter bluetoothAdapter;
   private MakeConnectionThread makeConnectionThread;
@@ -56,6 +66,10 @@ class Connection
 
   /**
    *  Connection() construct a new Construction instance.
+   *
+   *  @param bluetoothAdapter non-null BluetoothAdapter for Bluetooth.
+   *  @param key byte array representing the serialized key to share.
+   *  @param handler Handler for communicating.
    */
   Connection(BluetoothAdapter bluetoothAdapter, byte[] key, Handler handler)
   {
@@ -70,6 +84,8 @@ class Connection
 
   /**
    *  set the connection state.
+   *
+   *  @param state the new state to set.
    */
   private synchronized void setState(int state)
   {
@@ -143,8 +159,8 @@ class Connection
   /**
    *  given a socket and bluetoothDevice, begin a bluetooth connection
    *
-   *  @param socket
-   *  @param d
+   *  @param socket BluetoothSocket to make the connection on.
+   *  @param d BluetoothDevice to connect to.
    *  @param isServer boolean indicating whether this device acts as server.
    */
   synchronized void connected(BluetoothSocket socket, BluetoothDevice d,
@@ -195,6 +211,9 @@ class Connection
      */
     private final BluetoothServerSocket btSocket;
 
+    /**
+     *  ListenThread() constructor
+     */
     ListenThread()
     {
       BluetoothServerSocket tmp = null;
@@ -288,7 +307,7 @@ class Connection
 
   /**
    *  MakeConnectionThread trys to establish a bluetooth connection with a
-   *  server.
+   *  server. This is a connection that has not been made yet.
    */
   private class MakeConnectionThread extends Thread
   {
@@ -301,6 +320,11 @@ class Connection
     private final BluetoothSocket socket;
     private final BluetoothDevice device;
 
+    /**
+     *  MakeConnectionThread constructor
+     *
+     *  @param d BluetoothDevice to try to connect to.
+     */
     MakeConnectionThread(BluetoothDevice d)
     {
       device = d;
@@ -370,7 +394,9 @@ class Connection
   }
 
   /**
-   *  ConnectThread maintains a bluetooth connection to another device.
+   *  ConnectionThread maintains a bluetooth connection to another device.
+   *  This is maintaining a connection after it has been initiated by
+   *  a MakeConnectionThread.
    *
    *  This device either acts as the server or the client, it does not matter
    *  to ConnectThread.
@@ -408,6 +434,13 @@ class Connection
       out = tmpOut;
     }
 
+    /**
+     *  run() keeps reading into a buffer, report it to handler so that it can
+     *  be processed.
+     *
+     *  run() infinitely loops until an exception is thrown during a read. This
+     *  can be acheived by calling ConnectionThread.cancel().
+     */
     @Override
     public void run()
     {
@@ -432,6 +465,11 @@ class Connection
       }
     }
 
+    /**
+     *  write() given a buffer preforms an unsynchronized write.
+     *
+     *  @param buffer byte array to send via Bluetooth.
+     */
     public void write(byte[] buffer)
     {
       Log.d(TAG, "writing a buffer to send");
@@ -445,6 +483,9 @@ class Connection
       }
     }
 
+    /**
+     *  cancel() cancels the Bluetooth connection.
+     */
     public void cancel()
     {
       try

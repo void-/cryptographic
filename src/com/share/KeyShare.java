@@ -9,7 +9,6 @@ import com.key.NumberKeyPair;
 import com.key.KeyAlreadyExistsException;
 
 import android.util.Log;
-import android.nfc.*;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -73,6 +72,12 @@ public class KeyShare extends Activity implements
    *
    *  TAG constant string representing the tag to use when logging events that
    *    originate from calls to KeyPair methods.
+   *  BT_UUID UUID to uniquely identify this application via Bluetooth.
+   *  REQUEST_DISCOVERABLE
+   *  REQUEST_ENABLE
+   *  KEY_ADDED
+   *  KEY_REJECTED
+   *  MESSAGE_KEY_RECEIVED
    */
   private static final String TAG = "KEYSHARE";
   static final UUID BT_UUID =
@@ -86,16 +91,16 @@ public class KeyShare extends Activity implements
   /**
    *  Member Variables.
    *
-   *  nfcAdapter NfcAdapter object used for interfacing with nfc communication.
-   *  pairToShare NumberKeyPair containing the user's (phone number:public key)
-   *    to share via nfc.
+   *  bluetoothAdapter BluetoothAdapter for interfacing with Bluetooth.
    *  pairInQuestion NumberKeyPair that must be confirmed by the user before
    *    adding to Fetcher.
+   *  connection Connection for abstracting out Bluetooth connection details.
+   *  serializedKey byte array containing the serialized representing of
+   *    the user's NumberKeyPair.
+   *  deviceNamesAdapter ArrayAdapter for displaying visible bluetooth devices.
+   *  status TextView displaying the current status of the connection.
    */
-  //private NfcAdapter nfcAdapter;
   private BluetoothAdapter bluetoothAdapter;
-  protected NumberKeyPair pairToShare;
-  private boolean numberConfirmed;
   private NumberKeyPair pairInQuestion;
   private Connection connection;
   private byte[] serializedKey;
@@ -103,25 +108,19 @@ public class KeyShare extends Activity implements
   private TextView status;
 
   /**
-   *  onCreate() registers NFC callbacks and sets the public key to share.
+   *  onCreate() sets up UI and serializes the user's public key.
    *
-   *  If NFC is unavailable on the user's device, the activity will sit idle.
-   *
-   *  On the matter of setting the Ndef push message:
-   *  The user's NumberKeyPair is serialized into a byte array.
-   *  The Ndef message is a NdefRecord for a MIME type that is simply the
-   *    serialization of the NumberKeyPair.
+   *  If Bluetooth is unavailable on the device, this activity (probably) does
+   *  nothing.
    *
    *  @param savedInstance Bundle containing an saved data from a previous
-   *    instance.
+   *    instance. This is unused.
    */
   @Override
   public void onCreate(Bundle savedInstance)
   {
     super.onCreate(savedInstance);
     setContentView(R.layout.keyshare);
-
-    numberConfirmed = false;
 
     bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     //bluetooth is unavailable
@@ -143,25 +142,26 @@ public class KeyShare extends Activity implements
     registerReceiver(discoveredReceiver,
       new IntentFilter(BluetoothDevice.ACTION_FOUND));
 
+    //setup the list view for displaying devices
     deviceNamesAdapter = new ArrayAdapter<String>(this,
       android.R.layout.simple_list_item_1);
-    //setup the list view for displaying devices
     ListView l = (ListView) findViewById(R.id.device_list);
     l.setAdapter(deviceNamesAdapter);
     l.setOnItemClickListener(deviceClickListener);
 
-    this.pairToShare = (Key.getFetcher(getApplicationContext())).shareKey();
-    //serialize the NumberKeyPair to share
-    serializedKey = serializeKey(pairToShare);
+    //serialize the user's NumberKeyPair to share
+    serializedKey =
+      serializeKey((Key.getFetcher(getApplicationContext())).shareKey());
 
     connection = new Connection(bluetoothAdapter, serializedKey, handler);
     hexify(serializedKey);
   }
 
   /**
-   *  onStart() ask the user if they would like to be discoverable.
-   *  Do this in onStart() to avoid an infinite dialog loop if the user
-   *  declines.
+   *  onStart() asks the user if he or she would like to be discoverable.
+   *
+   *  Do this in onStart(), rather than in onResume(), to avoid an infinite
+   *  dialog loop if the user declines or dismisses the dialog.
    */
   @Override
   public void onStart()
@@ -171,7 +171,7 @@ public class KeyShare extends Activity implements
   }
 
   /**
-   *  onResume() start scanning for devices.
+   *  onResume() starts scanning for other Bluetooth devices.
    */
   @Override
   public void onResume()
@@ -181,7 +181,10 @@ public class KeyShare extends Activity implements
   }
 
   /**
-   *  onPause()
+   *  onPause() stops scanning for other Bluetooth devices.
+   *
+   *  Discovering new Bluetooth devices when the activity is not focused is not
+   *  useful.
    */
   @Override
   public void onPause()
@@ -192,7 +195,8 @@ public class KeyShare extends Activity implements
   }
 
   /**
-   *  onDestory() stop listening for devices.
+   *  onDestory() stop listening for devices by unregistering
+   *  discoveredReceiver.
    */
   @Override
   public void onDestroy()
@@ -204,14 +208,17 @@ public class KeyShare extends Activity implements
   /**
    *  handler Handler allows for communication from a Connection instance to
    *  the KeyShare activity.
+   *
+   *  handler also allows for communication from the binder to the ui thread.
+   *  This lets toasts be displayed regarding key acception and rejection.
    */
   private final Handler handler = new Handler()
   {
 
     /**
-     *  handleMessage() callback.
+     *  handleMessage() callback processes a message given to the handler.
      *
-     *  m Message to pass over.
+     *  m Message to process.
      */
     @Override
     public void handleMessage(Message m)
@@ -219,7 +226,7 @@ public class KeyShare extends Activity implements
       Log.d(TAG, "handleMessage() called, what:" + m.what);
       switch(m.what)
       {
-        case KeyShare.MESSAGE_KEY_RECEIVED:
+        case KeyShare.MESSAGE_KEY_RECEIVED: //Bluetooth got a key
           Log.d(TAG, "MESSAGE_KEY_RECEIVED");
           receiveKey((byte[]) m.obj, m.arg1, m.arg2);
           break;
@@ -245,7 +252,14 @@ public class KeyShare extends Activity implements
   {
 
     /**
-     *  This should already be filtered for discovering a new bluetooth device.
+     *  onReceive() callback for when new Bluetooth devices are discovered.
+     *
+     *  This should already be filtered by an Intent filter for discovering a
+     *  new bluetooth device. No additional checks are made.
+     *
+     *  This method adds a string representation of the Bluetooth device
+     *  discovered in the form:
+     *    "device_name-device_mac"
      */
     @Override
     public void onReceive(Context context, Intent intent)
@@ -269,7 +283,11 @@ public class KeyShare extends Activity implements
     /**
      *  onItemClick() callback when a bluetooth device is clicked.
      *
-     *  stop looking for bluetooth devices and start connecting to the selected
+     *  When this method is called, the user has selected a Bluetooth device to
+     *  share public keys with. In this case, the user will be the client and
+     *  the other device will be the server.
+     *
+     *  Stop looking for bluetooth devices and start connecting to the selected
      *  one.
      *
      *  @param a the AdapterView where the click happened.
@@ -282,15 +300,19 @@ public class KeyShare extends Activity implements
     {
       String nameAndMac = (((TextView) v).getText()).toString();
       status.setText("connected to:" + nameAndMac);
+      //separate the mac address from the name using '-' as a separator
       connection.connectTo(bluetoothAdapter.getRemoteDevice(
         nameAndMac.substring(nameAndMac.lastIndexOf('-')+1)));
 
+      //stop scanning for devices
       bluetoothAdapter.cancelDiscovery();
     }
   };
 
   /**
-   *  called when creating the action bar and options menu.
+   *  onCreateOptionsMenu() callback for creating the action bar and options
+   *  menu.
+   *
    *  @return true.
    */
   @Override
@@ -309,7 +331,8 @@ public class KeyShare extends Activity implements
    *  The user is the one that decides which device will be the client and
    *  which the server.
    *
-   *  @param item not used, can be null.
+   *  @param item not used, can be null. This simply exists so that
+   *    makeDiscoverable() works as a callback from a ui button.
    */
   public void makeDiscoverable(MenuItem item)
   {
@@ -326,7 +349,8 @@ public class KeyShare extends Activity implements
   /**
    *  onScan() callback when scan button clicked. Start scanning for devices.
    *
-   *  @param item not used, can be null.
+   *  @param item not used, can be null. This simply exists so that onScan()
+   *    works as a callback from a ui button.
    */
   public void onScan(MenuItem item)
   {
@@ -340,6 +364,9 @@ public class KeyShare extends Activity implements
   /**
    *  startListening() updates the ui and starts listening as a bluetooth
    *  server.
+   *
+   *  Bluetooth discoverability must be enabled before calling startListening()
+   *  or else nothing will happen.
    */
   private void startListening()
   {
@@ -355,6 +382,9 @@ public class KeyShare extends Activity implements
   /**
    *  onActivityResult() callback for when a launched activity returns.
    *
+   *  @param requestCode integer representing the reason for the activity.
+   *  @param resultCode the return status of the launched activity.
+   *  @param data Intent if the called activity returned any data. Unused.
    */
   public void onActivityResult(int requestCode, int resultCode, Intent data)
   {
@@ -388,59 +418,6 @@ public class KeyShare extends Activity implements
   }
 
   /**
-   *  processIntent() given an intent will determine what to do with it.
-   *  In this case, processIntent() always assumes the intent is for receiving
-   *  a public key via NFC.
-   *
-   *  If this method receives an array of NdefMessages in the intent, only the
-   *  first one will be processed.
-   *
-   *  @param Intent the intent to process: presumably contains an NdefMessage.
-   */
-  void processIntent(Intent intent)
-  {
-    Log.d(KeyShare.TAG, "processIntent called.");
-    Parcelable[] rawMsgs =
-      intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
-    if(rawMsgs.length <= 0)
-    {
-      Log.d(KeyShare.TAG, "Aborting, rawMsgs too short.");
-      return;
-    }
-    //Extract NdefMessage: process only 1 message; ignore all others
-    NdefMessage msg = (NdefMessage) rawMsgs[0];
-
-    //Deserialize a NumberKeyPair from the NdefRecord payload
-    ByteArrayInputStream b = new ByteArrayInputStream(
-      msg.getRecords()[0].getPayload());
-    ObjectInput in = null;
-    try
-    {
-      in = new ObjectInputStream(b);
-    }
-    catch(java.io.StreamCorruptedException e)
-    {Log.e(KeyShare.TAG, "exception", e); }
-    catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
-    try
-    {
-      pairInQuestion = (NumberKeyPair) in.readObject();
-      b.close();
-      in.close();
-    }
-    catch(ClassNotFoundException e) {Log.e(KeyShare.TAG, "exception", e); }
-    catch(IOException e) {Log.e(KeyShare.TAG, "exception", e); }
-    Log.d(KeyShare.TAG, "Launching fragment for key.");
-    //textLog.append("Received key for number:" + pairInQuestion.getNumber());
-    //launch a dialog to confirm addition of this public key
-    ShareConfirmationDialogFragment f = new ShareConfirmationDialogFragment();
-    Bundle bundle = new Bundle();
-    bundle.putString(ShareConfirmationDialogFragment.PHONE_NUMBER,
-      pairInQuestion.getNumber());
-    f.setArguments(bundle);
-    f.show(getFragmentManager(), ShareConfirmationDialogFragment.FRAG_TAG);
-  }
-
-  /**
    *  receiveKey() is called when a serialized NumberKeyPair is received via
    *  Bluetooth.
    *
@@ -448,6 +425,10 @@ public class KeyShare extends Activity implements
    *  Create an image for authentication.
    *  image : Server key || Client Key
    *  The keyBuffer should be large enough to store both serializations.
+   *
+   *  Warning: There are no checks done on if keyBuffer is large enough to
+   *  store both users' serialized keys. This may expose a denial of service
+   *  attack.
    *
    *  @param keyBuffer byte array representing a serialized
    *    NumberKeyPair.
@@ -599,6 +580,9 @@ public class KeyShare extends Activity implements
     return null; //if an exception is thrown
   }
 
+  /**
+   *  hexify() logs the hexadecimal representation of a byte array.
+   */
   private static void hexify(byte[] bytes)
   {
     char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
