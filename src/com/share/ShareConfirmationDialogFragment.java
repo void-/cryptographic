@@ -28,6 +28,9 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.BitmapFactory;
 import android.graphics.Shader.TileMode;
 
+import java.security.MessageDigest;
+import android.widget.Button;
+
 /**
  *  ShareConfirmationDialogFragment manages dialog creation for key generation.
  *
@@ -48,6 +51,7 @@ public class ShareConfirmationDialogFragment extends DialogFragment
    *  WIDTH constant authentication image width.
    *  HEIGHT constant authentication image height: adjust per algorithm, key
    *    size, and serialized representation of NumberKeyPair.
+   *  DELAY constant number of milliseconds to wait before enabling accept.
    */
   static final String FRAG_TAG = "com.share.confirmFragment";
   static final String TAG = "SHARE_CONFIRM";
@@ -56,6 +60,7 @@ public class ShareConfirmationDialogFragment extends DialogFragment
   //(296) * 2 = 592 = 4 * (4 * 37)
   private static final byte WIDTH = 4;
   private static final byte HEIGHT = 37;
+  private static final long DELAY = 5 * 1000;
 
   /**
    *  Member Variables.
@@ -65,10 +70,12 @@ public class ShareConfirmationDialogFragment extends DialogFragment
    *  buttonListener ShareConfirmationListener to callback when a button is
    *    pressed.
    *  keyIcon Drawable object to display as the dialog's icon.
+   *  acceptButton Button referencing the positive button in the alert dialog.
    */
   private String number;
   private ShareConfirmationListener buttonListener;
   private BitmapDrawable keyIcon;
+  private Button acceptButton;
 
   /**
    *  onCreate() is called when instantiating a new
@@ -105,6 +112,35 @@ public class ShareConfirmationDialogFragment extends DialogFragment
     Log.d(TAG, "keyIcon:" + keyIcon);
     //keyIcon = new BitmapDrawable(getResources(),
     //  BitmapFactory.decodeByteArray(img, 0, img.length));
+  }
+
+  /**
+   *  get a reference to the dialog posotive button and put a timer on it.
+   */
+  @Override
+  public void onStart()
+  {
+    super.onStart();
+
+    AlertDialog a = (AlertDialog) getDialog();
+    if(a == null)
+    {
+      return;
+    }
+    acceptButton = (Button) a.getButton(Dialog.BUTTON_POSITIVE);
+    acceptButton.setEnabled(false);
+    //wait 3 seconds, then enable the button
+    acceptButton.postDelayed(new java.lang.Runnable()
+    {
+      /**
+       *  run() makes the acceptButton clickable after waiting DELAY ms.
+       */
+      @Override
+      public void run()
+      {
+        acceptButton.setEnabled(true);
+      }
+    }, DELAY);
   }
 
   /**
@@ -165,6 +201,8 @@ public class ShareConfirmationDialogFragment extends DialogFragment
    *  generateImage() given a blob will generate a Drawable object uniquely
    *  representing it.
    *
+   *  Computationally expensive.
+   *
    *  @param blob byte array representing the data to uniquely display.
    *  @return Drawable representing server and client.
    */
@@ -173,8 +211,25 @@ public class ShareConfirmationDialogFragment extends DialogFragment
     //return new BitmapDrawable(getResources(),
     //  BitmapFactory.decodeByteArray(blob, 0, blob.length&0xfffffffc));
 
-      Bitmap b = Bitmap.createBitmap(WIDTH, HEIGHT, Bitmap.Config.ARGB_8888);
-      b.copyPixelsFromBuffer(java.nio.ByteBuffer.wrap(blob));
+      //32 colors to work with
+      byte[] buf = null;
+      try
+      {
+        buf = (MessageDigest.getInstance("SHA-256")).digest(blob);
+      }
+      catch(java.security.NoSuchAlgorithmException e)
+      {
+        Log.e(TAG, "no such algorithm.", e);
+      }
+      Bitmap b = Bitmap.createBitmap(50, 50, Bitmap.Config.ARGB_8888);
+      for(int j = 0; j < 50; ++j)
+      {
+        for(int i = 0; i < 50; ++i)
+        {
+          b.setPixel(i, j, (int)buf[i%buf.length]);
+        }
+      }
+
       return new BitmapDrawable(getResources(), b);
   }
 
