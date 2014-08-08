@@ -33,6 +33,7 @@ class Connection
   static final int STATE_LISTENING = 1;
   static final int STATE_CONNECTING = 2;
   static final int STATE_CONNECTED = 3;
+  private static final int SERIALIZED_SIZE = 592;
 
   /**
    *  Member Variables.
@@ -411,7 +412,7 @@ class Connection
     public void run()
     {
       Log.d(TAG, "starting a connection");
-      byte[] buffer = new byte[1024];
+      byte[] buffer = new byte[SERIALIZED_SIZE<<1];
       int bytes = 0;
       while(true)
       {
