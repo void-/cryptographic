@@ -7,8 +7,8 @@ Crytographic
 Real Life Usage
 ==============
 * Build and install application
-* Find someone to send sms's to
-* Exchange public keys, in person, via NFC
+* Find someone to send sms's to, i.e. another Cryptographic user
+* Exchange public keys, in person, via Bluetooth
 * Use application to send sms encrypted under the recipient's public key
 
 Technical details
@@ -19,11 +19,11 @@ Technical details
 
 Current Limitations
 ==================
-* NFC completely untested
-* No authentication or integrity is provided; only confidentiality
+* No authentication; only confidentiality, limited integrity with PKCS#1
 * No perfect forward secrecy is guaranteed
 * All sent and received messages are stored unencrypted on the mobile device
 * Untested on CDMA phones
+* NFC development stalled
 
 Building
 =======

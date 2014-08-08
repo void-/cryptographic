@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:id="@+id/menu_keyshare_visible"
+    android:title="@string/button_visible"
+    android:onClick="makeDiscoverable"
+    android:showAsAction="ifRoom|withText"
+    />
+  <item android:id="@+id/menu_keyshare_scan"
+    android:title="@string/button_scan"
+    android:onClick="onScan"
+    android:showAsAction="ifRoom|withText"
+    />
+</menu>
