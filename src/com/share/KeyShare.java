@@ -192,6 +192,16 @@ public class KeyShare extends Activity implements
   }
 
   /**
+   *  onDestory() stop listening for devices.
+   */
+  @Override
+  public void onDestroy()
+  {
+    super.onDestroy();
+    unregisterReceiver(discoveredReceiver);
+  }
+
+  /**
    *  handler Handler allows for communication from a Connection instance to
    *  the KeyShare activity.
    */
@@ -431,11 +441,13 @@ public class KeyShare extends Activity implements
   }
 
   /**
-   *  receiveKey() called when a key is received via bluetooth.
+   *  receiveKey() is called when a serialized NumberKeyPair is received via
+   *  Bluetooth.
    *
    *  Ask the user if the key is ok, then proceed to add it.
    *  Create an image for authentication.
    *  image : Server key || Client Key
+   *  The keyBuffer should be large enough to store both serializations.
    *
    *  @param keyBuffer byte array representing a serialized
    *    NumberKeyPair.
@@ -452,18 +464,19 @@ public class KeyShare extends Activity implements
     Log.d(TAG, "Received key for number:" + pairInQuestion.getNumber());
 
     //create a combined image of both keys
-    byte[] img = new byte[len + serializedKey.length];
     if(isServer > 0) //user was the server
     {
       Log.d(TAG, "server memcpy");
-      System.arraycopy(serializedKey, 0, img, 0, serializedKey.length);
-      System.arraycopy(keyBuffer, 0, img, serializedKey.length, len);
+      //move the client's key to the end of the buffer
+      System.arraycopy(keyBuffer, 0, keyBuffer, len, len);
+      //put the server's key in the beggining of the buffer
+      System.arraycopy(serializedKey, 0, keyBuffer, 0, serializedKey.length);
     }
     else
     {
       Log.d(TAG, "client memcpy");
-      System.arraycopy(keyBuffer, 0, img, 0, len);
-      System.arraycopy(serializedKey, 0, img, len, serializedKey.length);
+      //user was client: put key at the end of the buffer
+      System.arraycopy(serializedKey, 0, keyBuffer, len, serializedKey.length);
     }
 
     //launch a dialog to confirm addition of this public key
@@ -472,7 +485,7 @@ public class KeyShare extends Activity implements
     Bundle bundle = new Bundle();
     bundle.putString(ShareConfirmationDialogFragment.PHONE_NUMBER,
       pairInQuestion.getNumber());
-    bundle.putByteArray(ShareConfirmationDialogFragment.IMAGE, img);
+    bundle.putByteArray(ShareConfirmationDialogFragment.IMAGE, keyBuffer);
     f.setArguments(bundle);
     f.show(getFragmentManager(), ShareConfirmationDialogFragment.FRAG_TAG);
   }
