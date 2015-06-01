@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.ctxt"
+      package="ctxt.ctxt"
       android:versionCode="0"
       android:versionName="0.0">
     <uses-sdk android:minSdkVersion="14" />
@@ -23,7 +23,7 @@
             <action android:name="com.ctxt.CtxtService" />
         </service> -->
 
-        <receiver android:name="com.ctxt.SMSreceiver" android:exported="true">
+        <receiver android:name="ctxt.ctxt.SMSreceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SMS_RECEIVED"
                 />
@@ -32,7 +32,7 @@
             </intent-filter>
         </receiver>
 
-        <activity android:name="com.ctxt.MainActivity"
+        <activity android:name="ctxt.ctxt.MainActivity"
                   android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -40,15 +40,15 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="com.ctxt.ConversationActivity"
+        <activity android:name="ctxt.ctxt.ConversationActivity"
                   android:label="@string/conversation_name"
                   android:windowSoftInputMode="stateVisible|adjustPan">
         </activity>
 
-        <activity android:name="com.share.KeyShare"
+        <activity android:name="ctxt.share.KeyShare"
                   android:label="@string/share_name">
             <meta-data android:name="android.support.PARENT_ACTIVITY"
-                       android:value="com.ctxt.MainActivity" />
+                       android:value="ctxt.ctxt.MainActivity" />
         </activity>
 
     </application>
