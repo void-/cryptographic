@@ -1,7 +1,7 @@
-package com.share;
+package ctxt.share;
 
-import com.key.Key;
-import com.ctxt.R;
+import ctxt.key.Key;
+import ctxt.ctxt.R;
 
 import android.app.Activity;
 import android.content.Context;

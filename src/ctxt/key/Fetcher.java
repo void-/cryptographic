@@ -1,7 +1,7 @@
-package com.key;
+package ctxt.key;
 
-import com.key.NumberKeyPair;
-import com.key.KeyAlreadyExistsException;
+import ctxt.key.NumberKeyPair;
+import ctxt.key.KeyAlreadyExistsException;
 
 import android.util.Log;
 import android.telephony.TelephonyManager; //For storing self public key

@@ -1,7 +1,7 @@
-package com.ctxt;
+package ctxt.ctxt;
 
-import com.ctxt.SMSreceiver;
-import com.key.Key;
+import ctxt.ctxt.SMSreceiver;
+import ctxt.key.Key;
 
 import android.util.Log;
 import android.os.Bundle;

@@ -1,7 +1,7 @@
-package com.key;
+package ctxt.key;
 
-import com.key.Key;
-import com.key.KeyAlreadyExistsException;
+import ctxt.key.Key;
+import ctxt.key.KeyAlreadyExistsException;
 import android.util.Log;
 import android.app.Activity;
 import android.content.Context;

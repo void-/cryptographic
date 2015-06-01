@@ -1,12 +1,12 @@
-package com.share;
+package ctxt.share;
 
-import com.share.Connection;
-import com.share.ShareConfirmationDialogFragment;
-import com.ctxt.R;
+import ctxt.share.Connection;
+import ctxt.share.ShareConfirmationDialogFragment;
+import ctxt.ctxt.R;
 
-import com.key.Key;
-import com.key.NumberKeyPair;
-import com.key.KeyAlreadyExistsException;
+import ctxt.key.Key;
+import ctxt.key.NumberKeyPair;
+import ctxt.key.KeyAlreadyExistsException;
 
 import android.util.Log;
 import android.app.Activity;

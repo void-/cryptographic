@@ -1,6 +1,6 @@
-package com.db;
+package ctxt.db;
 
-import com.db.Names;
+import ctxt.db.Names;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;

@@ -1,14 +1,14 @@
-package com.ctxt;
+package ctxt.ctxt;
 
-import com.ctxt.KeyGenerationDialogFragment;
-import com.share.KeyShare;
-import com.key.Key;
-import com.key.Storer;
-import com.key.Fetcher;
-import com.key.NumberKeyPair;
-import com.key.KeyAlreadyExistsException;
+import ctxt.ctxt.KeyGenerationDialogFragment;
+import ctxt.share.KeyShare;
+import ctxt.key.Key;
+import ctxt.key.Storer;
+import ctxt.key.Fetcher;
+import ctxt.key.NumberKeyPair;
+import ctxt.key.KeyAlreadyExistsException;
 
-import com.db.Base128;
+import ctxt.db.Base128;
 
 import android.app.Activity;
 import android.os.Bundle;

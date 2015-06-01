@@ -1,15 +1,15 @@
-package com.ctxt;
+package ctxt.ctxt;
 
-import com.ctxt.R;
+import ctxt.ctxt.R;
 
-import com.db.MessageReader;
-import com.db.Inserter;
-import com.db.MessageInserter;
-import com.db.Message;
-import com.db.Updateable;
-import com.db.Base128;
-import com.key.Key;
-import com.key.Fetcher;
+import ctxt.db.MessageReader;
+import ctxt.db.Inserter;
+import ctxt.db.MessageInserter;
+import ctxt.db.Message;
+import ctxt.db.Updateable;
+import ctxt.db.Base128;
+import ctxt.key.Key;
+import ctxt.key.Fetcher;
 
 import android.app.Activity;
 import android.content.Context;

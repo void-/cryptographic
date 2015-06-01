@@ -1,4 +1,4 @@
-package com.db;
+package ctxt.db;
 
 import android.util.SparseIntArray;
 import android.util.Log;

@@ -1,6 +1,6 @@
-package com.ctxt;
+package ctxt.ctxt;
 
-import com.key.Key;
+import ctxt.key.Key;
 
 import android.app.Activity;
 import android.content.Context;

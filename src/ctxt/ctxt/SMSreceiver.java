@@ -1,9 +1,9 @@
-package com.ctxt;
+package ctxt.ctxt;
 
-import com.key.Key;
+import ctxt.key.Key;
 
-import com.db.Inserter;
-import com.db.MessageInserter;
+import ctxt.db.Inserter;
+import ctxt.db.MessageInserter;
 
 import android.util.Log;
 import android.os.Bundle;

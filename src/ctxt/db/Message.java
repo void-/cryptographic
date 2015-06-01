@@ -1,4 +1,4 @@
-package com.db;
+package ctxt.db;
 
 /**
  *  Message class simply packages together the data in an sms.

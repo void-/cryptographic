@@ -1,6 +1,6 @@
-package com.share;
+package ctxt.share;
 
-import com.share.KeyShare;
+import ctxt.share.KeyShare;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothSocket;

@@ -1,12 +1,12 @@
-package com.db;
+package ctxt.db;
 
-import com.ctxt.BuildConfig;
-import com.db.Updateable;
-import com.db.Names;
-import com.db.MessageDatabaseHelper;
+import ctxt.ctxt.BuildConfig;
+import ctxt.db.Updateable;
+import ctxt.db.Names;
+import ctxt.db.MessageDatabaseHelper;
 
-import com.key.Key;
-import com.key.Storer;
+import ctxt.key.Key;
+import ctxt.key.Storer;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;

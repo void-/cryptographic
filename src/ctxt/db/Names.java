@@ -1,4 +1,4 @@
-package com.db;
+package ctxt.db;
 
 /**
  *  Names static class defines database constants and schema.

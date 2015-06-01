@@ -1,4 +1,4 @@
-package com.db;
+package ctxt.db;
 
 /**
  *  Updateable interface with the sole purpose of ensuring that the

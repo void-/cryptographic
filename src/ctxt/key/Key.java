@@ -1,7 +1,7 @@
-package com.key;
+package ctxt.key;
 
-import com.key.Storer;
-import com.key.Fetcher;
+import ctxt.key.Storer;
+import ctxt.key.Fetcher;
 
 import android.content.Context; //Needed for constructing Storer and Fetcher
 

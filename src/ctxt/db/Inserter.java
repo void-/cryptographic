@@ -1,6 +1,6 @@
-package com.db;
+package ctxt.db;
 
-import com.db.MessageInserter;
+import ctxt.db.MessageInserter;
 
 import android.content.Context; //for constructing a MessageInserter
 
